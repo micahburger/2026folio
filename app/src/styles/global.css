@@ -48,7 +48,11 @@ button {
   height: 100dvh;
   overflow-y: auto;
   overflow-x: hidden;
-  background: #edece8;
+  background: #4c4c4c;
+}
+
+.shell--overview .shell-header {
+  color: #f5f4f1;
 }
 
 .shell-header {

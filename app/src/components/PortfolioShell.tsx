@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { Project } from "../data/types";
 import ProjectView from "./ProjectView";
 import ProjectProgress from "./ProjectProgress";
-import { fadeIn, fadeOut, playFlip, type Rect } from "../flip";
+import { fadeIn, fadeOut, zoomFromOverview, zoomToOverview, type Rect } from "../flip";
 import { DECK_TRANSITION_MS, prefersReducedMotion } from "../motion";
 
 interface PortfolioShellProps {
@@ -44,7 +44,7 @@ export default function PortfolioShell({ projects }: PortfolioShellProps) {
 
   const frameRefs = useRef<Array<HTMLDivElement | null>>([]);
   const projectViewRefs = useRef<Array<HTMLDivElement | null>>([]);
-  const pendingFlip = useRef<{ index: number; rect: Rect } | null>(null);
+  const pendingFlip = useRef<{ index: number; mode: "enter" | "exit"; rect: Rect } | null>(null);
   const overlayClearTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const wheelCooldown = useRef(false);
   const touchStartX = useRef<number | null>(null);
@@ -134,22 +134,25 @@ export default function PortfolioShell({ projects }: PortfolioShellProps) {
 
   // ---- overview mode: FLIP zoom -------------------------------------------
 
-  function measureActive(index: number): Rect | null {
-    const el = projectViewRefs.current[index];
+  function rectOf(el: HTMLElement | null): Rect | null {
     if (!el) return null;
     const r = el.getBoundingClientRect();
     return { top: r.top, left: r.left, width: r.width, height: r.height };
   }
 
   function openOverview() {
-    const rect = measureActive(activeProject);
-    pendingFlip.current = rect ? { index: activeProject, rect } : null;
+    // Measure the active project fullscreen, before the grid layout exists.
+    const rect = rectOf(projectViewRefs.current[activeProject]);
+    pendingFlip.current = rect ? { index: activeProject, mode: "enter", rect } : null;
     setViewMode("overview");
   }
 
   function closeOverview(targetIndex: number) {
-    const rect = measureActive(activeProject);
-    pendingFlip.current = rect ? { index: targetIndex, rect } : null;
+    // Measure the target's grid CELL now, while the overview grid still
+    // exists — once viewMode flips, .overview-frame reverts to its
+    // fullscreen project-mode CSS and this position is gone.
+    const rect = rectOf(frameRefs.current[targetIndex]);
+    pendingFlip.current = rect ? { index: targetIndex, mode: "exit", rect } : null;
     setActiveProject(targetIndex);
     setViewMode("project");
   }
@@ -165,11 +168,13 @@ export default function PortfolioShell({ projects }: PortfolioShellProps) {
 
     projects.forEach((_, i) => {
       const el = projectViewRefs.current[i];
-      if (!el) return;
+      const cell = frameRefs.current[i];
+      if (!el || !cell) return;
 
       if (i === flip.index) {
         if (reduced) fadeIn(el, 150);
-        else playFlip(el, flip.rect);
+        else if (flip.mode === "enter") zoomToOverview(el, cell, flip.rect, pageColorFor(projects[i]));
+        else zoomFromOverview(el, flip.rect, pageColorFor(projects[i]));
       } else if (viewMode === "overview") {
         fadeIn(el, reduced ? 150 : 300);
       } else {
@@ -252,12 +257,12 @@ export default function PortfolioShell({ projects }: PortfolioShellProps) {
         <span className="shell-label">2026</span>
       </header>
 
-      <div
-        className="deck-background"
-        style={{
-          backgroundColor: viewMode === "project" ? pageColorFor(projects[activeProject]) : "transparent",
-        }}
-      />
+      {viewMode === "project" && (
+        <div
+          className="deck-background"
+          style={{ backgroundColor: pageColorFor(projects[activeProject]) }}
+        />
+      )}
 
       <div className={`shell-rail ${viewMode === "overview" ? "shell-rail--overview" : ""}`}>
         {projects.map((project, index) => (
@@ -265,6 +270,7 @@ export default function PortfolioShell({ projects }: PortfolioShellProps) {
             key={project.id}
             ref={(node) => (frameRefs.current[index] = node)}
             className={`overview-frame ${viewMode === "overview" ? "overview-frame--overview" : ""}`}
+            style={viewMode === "overview" ? { backgroundColor: pageColorFor(project) } : undefined}
           >
             <ProjectView
               ref={(node) => (projectViewRefs.current[index] = node)}
