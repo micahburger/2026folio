@@ -1,0 +1,599 @@
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  background: #ffffff;
+  color: #141414;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+/* ================= shell ================= */
+
+.shell {
+  position: relative;
+  width: 100vw;
+  height: 100dvh;
+  overflow: hidden;
+  background: #ffffff;
+}
+
+/* Single shared background layer so project-to-project color changes read
+   as one continuous crossfade rather than an opaque panel occlusion cut.
+   Duration kept in sync with motion.ts DECK_BG_MS (560ms). */
+.deck-background {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  transition: background-color 560ms cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+.shell--overview {
+  height: 100dvh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: #edece8;
+}
+
+.shell-header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-between;
+  padding: 28px 40px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  z-index: 20;
+}
+
+.shell-label {
+  pointer-events: none;
+}
+
+.shell-label--interactive {
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  opacity: 1;
+  transition: opacity 200ms ease;
+}
+
+.shell-label--interactive:hover {
+  opacity: 0.6;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.shell-label-tag {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  opacity: 0.5;
+}
+
+.shell-rail {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+}
+
+.shell-rail--overview {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 56px;
+  width: 100%;
+  height: auto;
+  min-height: 100%;
+  padding: 140px 64px 96px;
+  align-content: start;
+}
+
+@media (max-width: 900px) {
+  .shell-rail--overview {
+    grid-template-columns: 1fr;
+    padding: 120px 24px 64px;
+    gap: 40px;
+  }
+}
+
+/* ---- overview frame (stable wrapper, never reparented/remounted) ---- */
+
+.overview-frame {
+  position: absolute;
+  inset: 0;
+}
+
+.overview-frame--overview {
+  position: relative;
+  inset: auto;
+  width: 100%;
+  aspect-ratio: 1440 / 900;
+  overflow: hidden;
+  container-type: inline-size;
+}
+
+/* ================= project view ================= */
+/* All three sit stacked in the same spot (via their .overview-frame parent);
+   opacity/z-index decide which one is actually visible. This is what lets
+   the deck transition crossfade elements in place instead of sliding a rail. */
+
+.project-view {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  opacity: 1;
+  pointer-events: auto;
+  z-index: 1;
+}
+
+.project-view.is-hidden {
+  opacity: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.project-view.is-leaving {
+  z-index: 2;
+  pointer-events: none;
+}
+
+.project-view.is-entering {
+  z-index: 1;
+}
+
+.project-view--overview {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100dvh;
+  transform-origin: top left;
+  transform: scale(calc(100cqw / 100vw));
+  cursor: pointer;
+}
+
+.project-view--overview:focus-visible {
+  outline: 2px solid #141414;
+  outline-offset: -2px;
+}
+
+.layout {
+  width: 100%;
+  height: 100%;
+  transition: color 400ms ease;
+}
+
+/* ================= deck (project-to-project) transition ================= */
+/* Durations/delays here must stay in sync with motion.ts (DECK_*) — CSS can't
+   read the JS constants directly, so motion.ts is the source of truth and
+   these are hand-kept to match. */
+
+.project-view[data-direction="1"] {
+  --deck-exit-x: -40px;
+  --deck-enter-x: 40px;
+}
+.project-view[data-direction="-1"] {
+  --deck-exit-x: 40px;
+  --deck-enter-x: -40px;
+}
+
+.project-view.is-leaving .media-gallery {
+  animation: deck-media-exit 320ms cubic-bezier(0.65, 0, 0.35, 1) both;
+}
+.project-view.is-leaving .project-copy,
+.project-view.is-leaving .project-meta {
+  animation: deck-copy-exit 320ms cubic-bezier(0.65, 0, 0.35, 1) 120ms both;
+}
+.project-view.is-entering .media-gallery {
+  animation: deck-media-enter 380ms cubic-bezier(0.65, 0, 0.35, 1) 160ms both;
+}
+.project-view.is-entering .project-copy,
+.project-view.is-entering .project-meta {
+  animation: deck-copy-enter 380ms cubic-bezier(0.65, 0, 0.35, 1) 320ms both;
+}
+
+@keyframes deck-media-exit {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(var(--deck-exit-x));
+  }
+}
+@keyframes deck-media-enter {
+  from {
+    opacity: 0;
+    transform: translateX(var(--deck-enter-x));
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+@keyframes deck-copy-exit {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-16px);
+  }
+}
+@keyframes deck-copy-enter {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ================= typography (shared across layouts) ================= */
+
+.project-title {
+  margin: 0;
+  font-size: clamp(40px, 4.2vw, 64px);
+  font-weight: 800;
+  line-height: 1.02;
+  letter-spacing: -0.01em;
+}
+
+.project-title--stacked {
+  font-size: clamp(56px, 6vw, 96px);
+  font-weight: 900;
+  line-height: 0.94;
+}
+
+.project-title--stacked .title-line {
+  display: block;
+}
+
+.project-disciplines {
+  margin: 20px 0 0;
+  font-size: 13px;
+  letter-spacing: 0.02em;
+  opacity: 0.75;
+}
+
+.project-headline {
+  margin: 0;
+  font-size: clamp(22px, 2vw, 30px);
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+.project-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.project-body p {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.55;
+  opacity: 0.85;
+}
+
+/* ================= layout: bleed (Messaging) ================= */
+
+.layout-bleed {
+  display: flex;
+  align-items: center;
+}
+
+.bleed-inner {
+  position: relative;
+  width: 100%;
+  max-width: 1760px;
+  height: 100%;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  padding-left: 64px;
+}
+
+.bleed-text {
+  display: flex;
+  align-items: center;
+  gap: 56px;
+  max-width: 900px;
+}
+
+.bleed-text .project-meta {
+  flex: 0 0 auto;
+  width: 340px;
+}
+
+.bleed-text .project-copy {
+  flex: 0 0 auto;
+  max-width: 480px;
+}
+
+.bleed-media {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  justify-content: flex-end;
+}
+
+.bleed-media--overflow .media-frame--desktop {
+  transform: translateX(56px);
+}
+
+/* ================= layout: panel (Applicant experience) ================= */
+
+.layout-panel-wrap {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 110px 40px 64px;
+}
+
+.layout-panel {
+  width: 100%;
+  max-width: 1760px;
+  height: 100%;
+  max-height: 900px;
+  margin: 0 auto;
+  border-radius: 28px;
+  padding: 72px;
+  display: flex;
+  align-items: center;
+  transition: background-color 400ms ease, color 400ms ease;
+}
+
+.panel-content {
+  display: grid;
+  grid-template-columns: minmax(220px, 380px) minmax(300px, 1fr) minmax(280px, 460px);
+  column-gap: 56px;
+  align-items: center;
+  width: 100%;
+}
+
+/* ================= layout: open (AI Assistant) ================= */
+
+.layout-open {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.open-content {
+  width: 100%;
+  max-width: 1760px;
+  margin: 0 auto;
+  padding: 0 96px;
+  display: grid;
+  grid-template-columns: minmax(280px, 520px) minmax(300px, 1fr) minmax(280px, 460px);
+  column-gap: 88px;
+  align-items: center;
+}
+
+.panel-content > *,
+.open-content > * {
+  min-width: 0;
+}
+
+/* ================= media gallery ================= */
+
+.media-gallery {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  outline-offset: 6px;
+}
+
+.media-stage {
+  position: relative;
+  cursor: pointer;
+}
+
+.media-layer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.media-layer--exit {
+  position: absolute;
+  inset: 0;
+  animation: media-exit 420ms cubic-bezier(0.65, 0, 0.35, 1) forwards;
+  pointer-events: none;
+}
+
+.media-layer--enter {
+  animation: media-enter 420ms cubic-bezier(0.65, 0, 0.35, 1) forwards;
+}
+
+.media-layer--exit[data-direction="1"] {
+  --shift: -32px;
+}
+.media-layer--exit[data-direction="-1"] {
+  --shift: 32px;
+}
+.media-layer--enter[data-direction="1"] {
+  --shift: 32px;
+}
+.media-layer--enter[data-direction="-1"] {
+  --shift: -32px;
+}
+
+@keyframes media-exit {
+  from {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(var(--shift)) scale(1);
+  }
+}
+
+@keyframes media-enter {
+  from {
+    opacity: 0;
+    transform: translateX(var(--shift)) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+.media-frame {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f4f2ec;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  color: rgba(20, 20, 20, 0.5);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-align: center;
+  padding: 16px;
+}
+
+.media-frame img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.media-frame--has-image {
+  background: none;
+  border: none;
+  box-shadow: none;
+}
+
+.media-frame--phone {
+  width: 260px;
+  aspect-ratio: 9 / 19;
+  border-radius: 36px;
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.18);
+}
+
+.media-frame--card {
+  width: 340px;
+  aspect-ratio: 4 / 3;
+  border-radius: 18px;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.16);
+}
+
+.media-frame--desktop {
+  width: 440px;
+  aspect-ratio: 16 / 10;
+  border-radius: 14px;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.16);
+}
+
+.media-progress {
+  display: flex;
+  gap: 8px;
+}
+
+.media-progress-mark {
+  width: 20px;
+  height: 3px;
+  background: rgba(20, 20, 20, 0.2);
+  transition: background-color 250ms ease;
+}
+
+.media-progress-mark.is-active {
+  background: currentColor;
+  opacity: 0.9;
+}
+
+/* ================= project progress (deck-level) ================= */
+
+.project-progress {
+  position: absolute;
+  left: 40px;
+  bottom: 32px;
+  display: flex;
+  gap: 8px;
+  z-index: 10;
+}
+
+.progress-mark {
+  width: 28px;
+  height: 3px;
+  background: rgba(20, 20, 20, 0.2);
+  transition: background-color 250ms ease;
+}
+
+.progress-mark.is-active {
+  background: #141414;
+}
+
+/* ================= ultrawide guard ================= */
+
+@media (min-width: 2000px) {
+  .layout-bleed,
+  .layout-open {
+    padding-left: max(0px, calc((100vw - 2000px) / 2));
+    padding-right: max(0px, calc((100vw - 2000px) / 2));
+  }
+}
+
+/* ================= reduced motion ================= */
+
+@media (prefers-reduced-motion: reduce) {
+  .layout-panel,
+  .layout,
+  .deck-background {
+    transition-duration: 120ms !important;
+  }
+  .media-layer--exit,
+  .media-layer--enter {
+    animation-duration: 120ms !important;
+  }
+  .project-view.is-leaving .media-gallery,
+  .project-view.is-leaving .project-copy,
+  .project-view.is-leaving .project-meta,
+  .project-view.is-entering .media-gallery,
+  .project-view.is-entering .project-copy,
+  .project-view.is-entering .project-meta {
+    animation: none !important;
+  }
+  .project-view.is-leaving {
+    opacity: 0;
+    transition: opacity 150ms ease;
+  }
+  .project-view.is-entering {
+    opacity: 1;
+    transition: opacity 150ms ease;
+  }
+}
