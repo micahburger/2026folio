@@ -795,12 +795,13 @@ button {
   gap: 24px;
 }
 
+/* No border here — each logo asset already carries its own stroke, and
+   adding one doubled it up. */
 .work-history-logo {
   flex: 0 0 auto;
   width: 72px;
   height: 72px;
   border-radius: 18px;
-  border: 1px solid rgba(0, 0, 0, 0.08);
   object-fit: cover;
 }
 
