@@ -1033,40 +1033,6 @@ button {
   opacity: 1;
 }
 
-/* ================= project progress (deck-level) ================= */
-
-.project-progress {
-  position: absolute;
-  left: 40px;
-  bottom: 32px;
-  display: flex;
-  gap: 8px;
-  z-index: 10;
-}
-
-/* The visible mark stays a 28x3 hairline; the padding (cancelled by an equal
-   negative margin, so layout is unchanged) is only there to give a finger
-   something to hit. Without it these are 3px tall — effectively untappable
-   on a phone, which is where this deck-level navigation matters most.
-   background-clip keeps the paint on the hairline itself. */
-.progress-mark {
-  width: 28px;
-  height: 3px;
-  /* background-color, not the background shorthand — the shorthand resets
-     background-clip, which is what keeps the paint on the hairline instead
-     of flooding the padded hit area below. */
-  background-color: rgba(20, 20, 20, 0.2);
-  background-clip: content-box;
-  box-sizing: content-box;
-  padding: 20px 0;
-  margin: -20px 0;
-  transition: background-color 250ms ease;
-}
-
-.progress-mark.is-active {
-  background-color: #141414;
-}
-
 /* ================= ultrawide guard ================= */
 
 @media (min-width: 2000px) {

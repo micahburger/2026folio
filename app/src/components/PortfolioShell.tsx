@@ -1,7 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { Project } from "../data/types";
 import ProjectView from "./ProjectView";
-import ProjectProgress from "./ProjectProgress";
 import { fadeIn, fadeOut, zoomFromOverview, zoomToOverview, type Rect } from "../flip";
 import { DECK_TRANSITION_MS, prefersReducedMotion } from "../motion";
 import { isLightColor } from "../lib/color";
@@ -324,14 +323,6 @@ export default function PortfolioShell({ projects }: PortfolioShellProps) {
           </div>
         ))}
       </div>
-
-      {viewMode === "project" && (
-        <ProjectProgress
-          count={projects.length}
-          active={activeProject}
-          onSelect={(i) => navigateToProject(i, { resetMedia: true })}
-        />
-      )}
     </div>
   );
 }
