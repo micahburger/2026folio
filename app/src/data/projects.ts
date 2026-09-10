@@ -14,7 +14,7 @@ import opendoorLogo from "../assets/workhistory/opendoor.png";
 import raytheonLogo from "../assets/workhistory/raytheon.png";
 import hudsonRougeLogo from "../assets/workhistory/hudson-rouge.png";
 import codeAndTheoryLogo from "../assets/workhistory/code-and-theory.png";
-import profilePhoto from "../assets/workhistory/profile.png";
+import profilePhoto from "../assets/workhistory/profile.jpg";
 
 /**
  * Panel colors are eyeballed from the shared design screenshots, not exact

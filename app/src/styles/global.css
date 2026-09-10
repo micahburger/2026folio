@@ -114,11 +114,20 @@ button {
 }
 
 .shell-menu-button {
+  position: relative;
   pointer-events: auto;
   padding: 10px 22px;
   border-radius: 999px;
   font: inherit;
   transition: background-color 400ms ease, color 400ms ease, opacity 200ms ease;
+}
+
+/* The pill renders ~30px tall. Rather than grow it, an invisible overlay
+   brings the touch target to the 44px minimum — the pill keeps its size. */
+.shell-menu-button::after {
+  content: "";
+  position: absolute;
+  inset: -7px -4px;
 }
 
 .shell-menu-button:hover {
@@ -464,20 +473,29 @@ button {
   --chapter-media-inset: var(--page-margin);
 }
 
-/* Fixed two-column test (desktop only — mobile keeps the shared stacked
-   fallback below): a fixed-width copy column, a fixed gap, then a
-   fixed-width media column the active example fills edge to edge. Overrides
-   the shared clamp-based .chapter-inner / absolutely-positioned .chapter-media
-   mechanism the other two layouts still use. */
+/* Fixed two-column layout (desktop only — mobile keeps the shared stacked
+   fallback below): a 600px copy column, a 125px gap, then a 750px media
+   column the active example fills. Overrides the shared clamp-based
+   .chapter-inner / absolutely-positioned .chapter-media mechanism the
+   bleed layout still uses.
+
+   Those three values need 1679px once the page margins are counted, so
+   they're targets rather than hard sizes: both columns may shrink and the
+   gap is fluid. Pinning them with `flex: none` clipped the media column off
+   the right edge on any narrower screen — 175px lost at 1440px, and at
+   1024px the artwork sat entirely offscreen, leaving a portfolio page with
+   no work on it. At 1680px and up nothing shrinks and the intended
+   proportions render exactly. */
 @media (min-width: 901px) {
   .layout-panel {
-    gap: 125px;
+    gap: clamp(48px, 8vw, 125px);
   }
 
   .layout-panel .chapter-inner {
     width: 600px;
     max-width: 600px;
-    flex: none;
+    flex: 0 1 600px;
+    min-width: 0;
   }
 
   .layout-panel .chapter-media {
@@ -486,7 +504,9 @@ button {
     right: auto;
     transform: none;
     width: 750px;
-    flex: none;
+    max-width: 750px;
+    flex: 0 1 750px;
+    min-width: 0;
     justify-content: center;
   }
 }
@@ -506,16 +526,18 @@ button {
 }
 
 /* Same fixed two-column treatment as Applicant experience — see the
-   .layout-panel block above for the full rationale. */
+   .layout-panel block above for the full rationale, including why these
+   columns shrink instead of holding their exact widths. */
 @media (min-width: 901px) {
   .layout-open {
-    gap: 125px;
+    gap: clamp(48px, 8vw, 125px);
   }
 
   .layout-open .chapter-inner {
     width: 600px;
     max-width: 600px;
-    flex: none;
+    flex: 0 1 600px;
+    min-width: 0;
   }
 
   .layout-open .chapter-media {
@@ -524,7 +546,9 @@ button {
     right: auto;
     transform: none;
     width: 750px;
-    flex: none;
+    max-width: 750px;
+    flex: 0 1 750px;
+    min-width: 0;
     justify-content: center;
   }
 }
@@ -552,6 +576,28 @@ button {
   .layout-open {
     height: auto;
     min-height: 100dvh;
+  }
+
+  /* …but only in project mode. Overview cells size themselves from an
+     aspect ratio and scale their preview with container-query units, and
+     the full-height rule above broke both: the frame stretched to a full
+     screen, which made 100cqh/100dvh resolve to 1, so the scale collapsed
+     to identity and every cell rendered its project at full size and got
+     cropped by the frame. Restoring the two overview variants here (later
+     in the cascade, same specificity) puts the preview grid back. */
+  .overview-frame--overview {
+    height: auto;
+    min-height: 0;
+    /* A desktop-shaped 1440/900 card showing a tall phone page is mostly a
+       crop of the pill and half a title. A card holds one screen of its
+       project, so on a phone it takes the phone's shape and shows that
+       first screen whole — same idea the desktop grid already reads as. */
+    aspect-ratio: 9 / 16;
+  }
+
+  .project-view--overview {
+    height: 100dvh;
+    min-height: 0;
   }
 
   /* Chapter text column: same 100%-width, tighter-gap treatment for all
@@ -590,10 +636,19 @@ button {
     transform: none;
   }
 
+  /* Every example carries an inline pixel width sized for desktop (up to
+     880px for Messaging's desktop screenshot) — more than twice a phone's
+     viewport, which rendered a cropped, unreadable fragment of the work.
+     `max-width` alone can't fix it: the stage is a content-sized grid, so
+     100% resolves against the oversized frame itself. Overriding the width
+     outright is what actually clamps it; the inline aspect-ratio survives,
+     so each example just scales down at its own shape. !important is the
+     only thing that beats the inline width. */
   .layout-bleed .media-frame,
   .layout-panel .media-frame,
   .layout-open .media-frame {
     margin: 0 auto;
+    width: 100% !important;
     max-width: 100%;
   }
 
@@ -637,6 +692,13 @@ button {
   height: 100%;
   overflow-y: auto;
   overflow-x: hidden;
+  /* This is the one chapter that scrolls, and the header above it is
+     transparent — so work-history rows used to slide directly behind the
+     nav and tangle with it. Fading the top band dissolves them just before
+     they reach it. The first heading already starts below this band, so the
+     page at rest looks exactly as it did. */
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, transparent 72px, #000 112px);
+  mask-image: linear-gradient(to bottom, transparent 0, transparent 72px, #000 112px);
 }
 
 /* In the overview grid this chapter is only ever shown at scrollTop 0, so
@@ -809,6 +871,12 @@ button {
   position: relative;
   cursor: pointer;
   display: grid;
+  /* An auto track sizes to the example's own inline pixel width, which is
+     what let an oversized example push out of a narrower column no matter
+     what max-width said. minmax(0, …) lets the track shrink instead, so the
+     frame's own max-width can finally resolve against a real width. */
+  grid-template-columns: minmax(0, 1fr);
+  max-width: 100%;
 }
 
 /* Both layers share the same grid cell, so the stage sizes itself to
@@ -821,6 +889,7 @@ button {
   display: flex;
   align-items: center;
   justify-content: center;
+  min-width: 0;
   animation: media-fade 420ms ease forwards;
 }
 
@@ -938,15 +1007,27 @@ button {
   z-index: 10;
 }
 
+/* The visible mark stays a 28x3 hairline; the padding (cancelled by an equal
+   negative margin, so layout is unchanged) is only there to give a finger
+   something to hit. Without it these are 3px tall — effectively untappable
+   on a phone, which is where this deck-level navigation matters most.
+   background-clip keeps the paint on the hairline itself. */
 .progress-mark {
   width: 28px;
   height: 3px;
-  background: rgba(20, 20, 20, 0.2);
+  /* background-color, not the background shorthand — the shorthand resets
+     background-clip, which is what keeps the paint on the hairline instead
+     of flooding the padded hit area below. */
+  background-color: rgba(20, 20, 20, 0.2);
+  background-clip: content-box;
+  box-sizing: content-box;
+  padding: 20px 0;
+  margin: -20px 0;
   transition: background-color 250ms ease;
 }
 
 .progress-mark.is-active {
-  background: #141414;
+  background-color: #141414;
 }
 
 /* ================= ultrawide guard ================= */

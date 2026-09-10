@@ -114,7 +114,16 @@ export function zoomFromOverview(element: HTMLElement, cellRect: Rect, backgroun
   return animation;
 }
 
+/**
+ * A fade can interrupt a zoom — click through the gallery quickly and the
+ * same element gets zoomed, then faded, before the zoom settles. The zoom
+ * escapes the element to position:fixed up front and only undoes that when
+ * it finishes, so an interrupted one left the element pinned over the page
+ * forever: several projects stacked on screen at once, each stuck fixed.
+ * A fade never wants that escape hatch, so it drops it before starting.
+ */
 export function fadeIn(element: HTMLElement, durationMs: number): Animation {
+  clearEscapedPosition(element);
   const animation = runExclusive(element, [{ opacity: 0 }, { opacity: 1 }], {
     duration: durationMs,
     easing: "ease",
@@ -125,6 +134,7 @@ export function fadeIn(element: HTMLElement, durationMs: number): Animation {
 }
 
 export function fadeOut(element: HTMLElement, durationMs: number): Animation {
+  clearEscapedPosition(element);
   const animation = runExclusive(element, [{ opacity: 1 }, { opacity: 0.15 }], {
     duration: durationMs,
     easing: "ease",

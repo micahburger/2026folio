@@ -22,8 +22,17 @@ function pageColorFor(project: Project) {
   return project.backgroundColor;
 }
 
+// Shorter paths that have been handed out for a project whose real slug
+// differs. Without this, /assistant matches nothing and silently lands the
+// visitor on the first project instead — a link sent to someone opens the
+// wrong work.
+const SLUG_ALIASES: Record<string, string> = {
+  assistant: "ai-assistant",
+};
+
 function indexForSlug(projects: Project[], pathname: string) {
-  const slug = pathname.replace(/^\//, "");
+  const requested = pathname.replace(/^\//, "");
+  const slug = SLUG_ALIASES[requested] ?? requested;
   const index = projects.findIndex((p) => p.slug === slug);
   return index === -1 ? 0 : index;
 }
@@ -201,11 +210,29 @@ export default function PortfolioShell({ projects }: PortfolioShellProps) {
 
   // ---- URL sync (no router) ------------------------------------------------
 
+  const hasSyncedUrl = useRef(false);
   useEffect(() => {
     const path = viewMode === "overview" ? "/overview" : `/${projects[activeProject]?.slug ?? ""}`;
     if (window.location.pathname !== path) {
-      window.history.pushState({}, "", path);
+      // The very first sync isn't navigation — it's correcting an unknown or
+      // mistyped URL to whatever actually rendered. Replacing keeps that dead
+      // path out of the back history, where it otherwise sat as an entry that
+      // restored nothing when the visitor went back to it.
+      if (hasSyncedUrl.current) window.history.pushState({}, "", path);
+      else window.history.replaceState({}, "", path);
     }
+    hasSyncedUrl.current = true;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewMode, activeProject]);
+
+  // Tab/window title follows the visible project — this is what a shared link
+  // shows in a tab strip, a bookmark, and most link unfurls.
+  useEffect(() => {
+    const project = projects[activeProject];
+    document.title =
+      viewMode === "overview" || !project
+        ? "Micah Lindenberger — 2026"
+        : `${project.title} — Micah Lindenberger`;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [viewMode, activeProject]);
 
