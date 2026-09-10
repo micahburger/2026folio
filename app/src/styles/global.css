@@ -594,6 +594,38 @@ button {
     overflow-x: hidden;
   }
 
+  /* Pinned to the viewport rather than the top of a scrolling page, so the
+     menu stays reachable from anywhere in a chapter. */
+  .shell-header {
+    position: fixed;
+  }
+
+  /* Pinning it means the page now travels underneath, and the name and
+     tagline ended up tangled in whatever scrolled past — the chapter title
+     ran straight through them. This carries the chapter's own colour, so at
+     rest it matches the page exactly and only reads as anything once there's
+     content behind it. */
+  .shell-header::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 190%;
+    background: linear-gradient(to bottom, var(--page-color, transparent) 58%, transparent);
+    z-index: -1;
+    pointer-events: none;
+  }
+
+  /* Every chapter renders at once and the page scrolls, so the inactive ones
+     still took up their full height — the scroll ran to whichever chapter was
+     tallest (the resume), leaving every shorter chapter with a screenful of
+     blank page after its content. Taking them out of layout while they're
+     idle makes each chapter scroll to its own length. A chapter mid-deck
+     transition carries is-leaving/is-entering instead of is-hidden, so both
+     sides of that still render. */
+  .project-view.is-hidden {
+    display: none;
+  }
+
   .shell-rail,
   .project-view,
   .overview-frame,

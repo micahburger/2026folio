@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
 import type { Project } from "../data/types";
 import ProjectView from "./ProjectView";
 import { fadeIn, fadeOut, resetFlip, zoomCellToFullscreen, zoomToOverview, type Rect } from "../flip";
@@ -305,7 +305,18 @@ export default function PortfolioShell({ projects }: PortfolioShellProps) {
 
   return (
     <div className={`shell ${viewMode === "overview" ? "shell--overview" : ""}`}>
-      <header className="shell-header" style={{ color: headerColor }}>
+      <header
+        className="shell-header"
+        style={
+          {
+            color: headerColor,
+            // Feeds the scrim behind the pinned mobile header — see
+            // .shell-header::before. Matching the page exactly means it's
+            // invisible until content actually scrolls up under the nav.
+            "--page-color": viewMode === "overview" ? "#000000" : pageColorFor(projects[activeProject]),
+          } as CSSProperties
+        }
+      >
         <span className="shell-name">Micah Lindenberger</span>
         <button
           type="button"
