@@ -32,7 +32,6 @@ export const projects: Project[] = [
     title: "Messaging",
     disciplines: ["Platform design", "Responsive systems", "Cross-product architecture"],
     headline: "Turning messaging into part of the rental workflow",
-    pillTheme: "blue",
     body: [
       "RentSpree connects agents, landlords, and applicants, but the conversation lived in personal texts and email, disconnected from the property and application.",
       "I designed the messaging platform around that missing context: a responsive three-column hub where every conversation is tied to a property, its participants, and application activity. The foundation was built to support future milestones, templates, notifications, and automated workflows without redesigning the core experience.",
@@ -81,7 +80,6 @@ export const projects: Project[] = [
     title: "Applicant experience",
     disciplines: ["Mobile UX", "Information architecture", "Content design"],
     headline: "Making a high-friction application feel finishable",
-    pillTheme: "green",
     body: [
       "Applying for a rental is long, sensitive, mostly completed on a phone, and ends with a payment. The existing experience felt like one continuous wall of questions with little context about what was left or why information was being requested.",
       "I restructured the application into clear chapters that follow the applicant’s mental model, created natural save and resume points, and rewrote the experience to explain sensitive asks as they happen. The result is a flow designed around confidence and momentum instead of simply getting applicants through more screens.",
@@ -124,7 +122,6 @@ export const projects: Project[] = [
     title: "Rental Assistant",
     disciplines: ["AI product design", "Conversational UX", "Product analytics"],
     headline: "Finding the right role for AI in a complex workflow",
-    pillTheme: "blue",
     body: [
       "Screening an applicant or listing a property meant learning RentSpree’s navigation before getting anything done. I designed a conversational layer that lets agents start those jobs directly.",
       "The workflows themselves worked: 79% of people who started creating an ApplyLink finished one, while 514 reviewed conversations produced zero compliance failures. But adoption exposed a more interesting problem. After reviewing all 1,083 sessions, I found that more than half of users disappeared when we asked for a property address.",

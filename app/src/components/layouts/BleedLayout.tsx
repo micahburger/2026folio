@@ -26,7 +26,6 @@ export default function BleedLayout({ project, gallery, interactive }: LayoutPro
     >
       <div className="chapter-inner">
         <div className="chapter-text">
-          <p className={`headline-pill headline-pill--${project.pillTheme}`}>{project.headline}</p>
           <ProjectMeta title={project.title} titleLines={project.titleLines} disciplines={project.disciplines} />
           <div className="project-body">
             {project.body.map((paragraph, index) => (

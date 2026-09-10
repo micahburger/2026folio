@@ -22,14 +22,6 @@
      margins) — 0.25 = 25%. One shared value for all three chapters; dial
      this to taste rather than adjusting each chapter separately. */
   --content-gap: 0.25;
-
-  /* Headline pill colors — see .headline-pill--* below. Add a new named
-     variant here (and to PillTheme in data/types.ts) rather than hardcoding
-     a one-off color on a project. */
-  --pill-green-bg: #78c598;
-  --pill-green-fg: #ffffff;
-  --pill-blue-bg: #d8e5ff;
-  --pill-blue-fg: #0f214a;
 }
 
 * {
@@ -43,8 +35,11 @@ body,
   margin: 0;
 }
 
+/* Proxima Nova is the page's reading face — titles, project copy, and the
+   resume all inherit it from here. The nav is the one deliberate exception
+   and sets Inter on itself. */
 body {
-  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-family: "Proxima Nova", "Inter", -apple-system, "Helvetica Neue", Arial, sans-serif;
   background: #ffffff;
   color: #141414;
 }
@@ -350,7 +345,7 @@ button {
 
 .project-body p {
   margin: 0;
-  font-family: "Inter", -apple-system, "Helvetica Neue", Arial, sans-serif;
+  font-family: "Proxima Nova", "Inter", -apple-system, "Helvetica Neue", Arial, sans-serif;
   font-size: 18px;
   line-height: 1.4;
   letter-spacing: 0;
@@ -373,29 +368,6 @@ button {
 .chapter-text .project-meta,
 .chapter-text .media-progress {
   margin: 0;
-}
-
-.headline-pill {
-  display: inline-flex;
-  align-items: center;
-  margin: 0;
-  padding: 8px 12px;
-  border-radius: 999px;
-  font-family: "Inter", -apple-system, "Helvetica Neue", Arial, sans-serif;
-  font-weight: 400;
-  font-size: 14px;
-  line-height: 1.15;
-  letter-spacing: -0.01em;
-}
-
-.headline-pill--green {
-  background: var(--pill-green-bg);
-  color: var(--pill-green-fg);
-}
-
-.headline-pill--blue {
-  background: var(--pill-blue-bg);
-  color: var(--pill-blue-fg);
 }
 
 /* ================= chapter media (shared by all three chapters) ================= */
@@ -811,21 +783,21 @@ button {
 
 .work-history-company {
   margin: 0 0 2px;
-  font-family: "Inter", -apple-system, "Helvetica Neue", Arial, sans-serif;
   font-weight: 400;
   font-size: 15px;
 }
 
+/* 400, not 500 — only Proxima Nova Regular is loaded, so asking for a medium
+   here made the browser fake one and the job titles rendered smeared. At 24px
+   against a 15px company line the size carries the hierarchy on its own. */
 .work-history-role {
   margin: 0 0 8px;
-  font-family: "Inter", -apple-system, "Helvetica Neue", Arial, sans-serif;
-  font-weight: 500;
+  font-weight: 400;
   font-size: 24px;
 }
 
 .work-history-meta {
   margin: 0;
-  font-family: "Inter", -apple-system, "Helvetica Neue", Arial, sans-serif;
   font-weight: 400;
   font-size: 16px;
   line-height: 1.4;
@@ -843,7 +815,6 @@ button {
 
 .resume-contact-subtitle {
   margin: 12px 0 0;
-  font-family: "Inter", -apple-system, "Helvetica Neue", Arial, sans-serif;
   font-size: 18px;
 }
 
@@ -879,7 +850,6 @@ button {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  font-family: "Inter", -apple-system, "Helvetica Neue", Arial, sans-serif;
   font-size: 20px;
 }
 

@@ -2,8 +2,6 @@ import type { ComponentType } from "react";
 
 export type MediaTreatment = "phone" | "card" | "desktop";
 export type ProjectLayoutVariant = "bleed" | "panel" | "open";
-/** Named design-system pill colors — see .headline-pill--* in global.css. */
-export type PillTheme = "green" | "blue";
 
 export interface ProjectMediaItem {
   id: string;
@@ -41,8 +39,9 @@ export interface StandardProject {
   /** Forces the title to render as stacked lines instead of natural word-wrap. */
   titleLines?: string[];
   disciplines: string[];
+  /** Kept as copy, but nothing renders it since the pill above the title was
+   * removed — available if it finds another home. */
   headline: string;
-  pillTheme: PillTheme;
   body: string[];
   backgroundColor: string;
   textColor: string;
@@ -69,7 +68,7 @@ export interface ResumeContact {
   storeLabel: string;
 }
 
-/** The Resume chapter: no headline pill or media gallery, scrolls vertically
+/** The Resume chapter: no media gallery, scrolls vertically
  * (every other chapter is one fixed screen) — a deliberately different page,
  * not a fourth variant of the deck pattern the other three share. */
 export interface ResumeProject {
