@@ -93,26 +93,41 @@ export function zoomToOverview(
   return animation;
 }
 
-/** Exiting overview: element has already reverted to fullscreen CSS (mode
- * has switched by the time this runs), but should visually start from where
- * its grid cell was — `cellRect` must be captured BEFORE the mode switch,
- * while the overview grid was still laid out. */
-export function zoomFromOverview(element: HTMLElement, cellRect: Rect, backgroundColor: string): Animation {
-  // Cover, not fit-by-width — see the matching comment in zoomToOverview.
+/**
+ * Overview -> project, played BEFORE the mode switch: the picked cell grows
+ * out of the gallery and fills the viewport while the rest of the grid stays
+ * put behind it.
+ *
+ * Switching modes first (see zoomFromOverview) meant the project's own
+ * background covered the whole gallery the instant you clicked, and the
+ * content only zoomed in afterwards — the cell never appeared to travel.
+ * Here nothing about the page changes until the growth lands.
+ *
+ * Cleanup is deliberately left to the caller: the escape hatch has to stay
+ * on until the mode switch has actually committed, or the element drops back
+ * into its little cell for a frame first. Call `resetFlip` once it has.
+ */
+export function zoomCellToFullscreen(
+  element: HTMLElement,
+  cellRect: Rect,
+  backgroundColor: string
+): Animation {
+  // Same cover math as the other two — the element is already viewport-sized
+  // and merely scaled down into its cell, so this reproduces exactly where it
+  // currently appears, then releases it to its natural full size.
   const scale = Math.max(cellRect.width / window.innerWidth, cellRect.height / window.innerHeight);
   const startTransform = `translate(${cellRect.left}px, ${cellRect.top}px) scale(${scale})`;
 
   element.style.transformOrigin = "top left";
   withEscapedPosition(element, backgroundColor);
 
-  const animation = runExclusive(element, [{ transform: startTransform }, { transform: "none" }], {
+  return runExclusive(element, [{ transform: startTransform }, { transform: "none" }], {
     duration: OVERVIEW_TRANSITION_MS,
     easing: OVERVIEW_EASING,
     fill: "both",
   });
-  releaseWhenSettled(element, animation, () => clearEscapedPosition(element));
-  return animation;
 }
+
 
 /**
  * A fade can interrupt a zoom — click through the gallery quickly and the

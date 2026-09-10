@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { Project } from "../data/types";
 import ProjectView from "./ProjectView";
-import { fadeIn, fadeOut, zoomFromOverview, zoomToOverview, type Rect } from "../flip";
+import { fadeIn, fadeOut, resetFlip, zoomCellToFullscreen, zoomToOverview, type Rect } from "../flip";
 import { DECK_TRANSITION_MS, prefersReducedMotion } from "../motion";
 import { isLightColor } from "../lib/color";
 
@@ -55,7 +55,9 @@ export default function PortfolioShell({ projects }: PortfolioShellProps) {
 
   const frameRefs = useRef<Array<HTMLDivElement | null>>([]);
   const projectViewRefs = useRef<Array<HTMLDivElement | null>>([]);
-  const pendingFlip = useRef<{ index: number; mode: "enter" | "exit"; rect: Rect } | null>(null);
+  // Only the overview-opening zoom is staged this way now; closing runs its
+  // animation up front and commits afterwards (see closeOverview).
+  const pendingFlip = useRef<{ index: number; rect: Rect } | null>(null);
   const overlayClearTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const wheelCooldown = useRef(false);
   const touchStartX = useRef<number | null>(null);
@@ -154,18 +156,41 @@ export default function PortfolioShell({ projects }: PortfolioShellProps) {
   function openOverview() {
     // Measure the active project fullscreen, before the grid layout exists.
     const rect = rectOf(projectViewRefs.current[activeProject]);
-    pendingFlip.current = rect ? { index: activeProject, mode: "enter", rect } : null;
+    pendingFlip.current = rect ? { index: activeProject, rect } : null;
     setViewMode("overview");
   }
 
-  function closeOverview(targetIndex: number) {
-    // Measure the target's grid CELL now, while the overview grid still
-    // exists — once viewMode flips, .overview-frame reverts to its
-    // fullscreen project-mode CSS and this position is gone.
-    const rect = rectOf(frameRefs.current[targetIndex]);
-    pendingFlip.current = rect ? { index: targetIndex, mode: "exit", rect } : null;
+  function commitToProject(targetIndex: number) {
+    pendingFlip.current = null;
     setActiveProject(targetIndex);
     setViewMode("project");
+  }
+
+  function closeOverview(targetIndex: number) {
+    const el = projectViewRefs.current[targetIndex];
+    // The target's grid cell, measured while the overview grid still exists.
+    const rect = rectOf(frameRefs.current[targetIndex]);
+
+    if (!el || !rect || prefersReducedMotion()) {
+      commitToProject(targetIndex);
+      return;
+    }
+
+    // Grow the cell into the page first, and only switch modes once it has
+    // landed. Switching first re-laid the whole rail out instantly — the grid
+    // collapsed and the project's background covered everything before the
+    // zoom had played, so the cell never looked like it travelled anywhere.
+    const zoom = zoomCellToFullscreen(el, rect, pageColorFor(projects[targetIndex]));
+    zoom.finished
+      .then(() => {
+        commitToProject(targetIndex);
+        // Hold the escape hatch until the fullscreen project CSS is actually
+        // on the element; dropping it any earlier snaps it back into the cell
+        // for a frame. A rejection here just means a newer pick interrupted
+        // this one, which owns the transition instead.
+        requestAnimationFrame(() => resetFlip(el));
+      })
+      .catch(() => {});
   }
 
   useLayoutEffect(() => {
@@ -184,8 +209,7 @@ export default function PortfolioShell({ projects }: PortfolioShellProps) {
 
       if (i === flip.index) {
         if (reduced) fadeIn(el, 150);
-        else if (flip.mode === "enter") zoomToOverview(el, cell, flip.rect, pageColorFor(projects[i]));
-        else zoomFromOverview(el, flip.rect, pageColorFor(projects[i]));
+        else zoomToOverview(el, cell, flip.rect, pageColorFor(projects[i]));
       } else if (viewMode === "overview") {
         fadeIn(el, reduced ? 150 : 300);
       } else {
