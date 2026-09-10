@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
+import { flushSync } from "react-dom";
 import type { Project } from "../data/types";
 import ProjectView from "./ProjectView";
 import { fadeIn, fadeOut, resetFlip, zoomCellToFullscreen, zoomToOverview, type Rect } from "../flip";
@@ -184,13 +185,18 @@ export default function PortfolioShell({ projects }: PortfolioShellProps) {
     const zoom = zoomCellToFullscreen(el, rect, pageColorFor(projects[targetIndex]));
     zoom.finished
       .then(() => {
-        commitToProject(targetIndex);
-        // Hold the escape hatch until the fullscreen project CSS is actually
-        // on the element; dropping it any earlier snaps it back into the cell
-        // for a frame. A rejection here just means a newer pick interrupted
-        // this one, which owns the transition instead.
-        requestAnimationFrame(() => resetFlip(el));
+        // The escape hatch can only come off once the fullscreen project CSS
+        // is actually on the element. Without the flush it came off first: a
+        // plain state update isn't applied synchronously here, so cleanup on
+        // the next frame beat React's commit to the DOM, and for that frame
+        // the element had lost position:fixed while still carrying the
+        // overview class — which scales it down into its grid cell. It
+        // snapped back to the card and out again, one frame, every time.
+        flushSync(() => commitToProject(targetIndex));
+        resetFlip(el);
       })
+      // A rejection just means a newer pick interrupted this one, and that
+      // transition owns the cleanup instead.
       .catch(() => {});
   }
 
