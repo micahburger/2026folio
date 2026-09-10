@@ -26,11 +26,11 @@ export const DECK_TRANSITION_MS = DECK_COPY_IN_DELAY_MS + DECK_COPY_IN_MS; // 70
 //
 // Two variants, both defined in global.css (CSS can't read these):
 //   - base: a 420ms opacity crossfade. Phones, touch, reduced motion.
-//   - desktop: the same crossfade plus a small counter-drift and scale, 700ms
-//     on cubic-bezier(0.22, 1, 0.36, 1). Gated on a pointer that can hover,
-//     so tablets stay on the base one.
+//   - desktop: the same crossfade plus a counter-drift and scale, 950ms on
+//     cubic-bezier(0.4, 0, 0.2, 1). Gated on a pointer that can hover, so
+//     tablets stay on the base one.
 export const MEDIA_TRANSITION_MS = 420;
-export const MEDIA_TRANSITION_DESKTOP_MS = 700;
+export const MEDIA_TRANSITION_DESKTOP_MS = 950;
 /**
  * How long the outgoing layer stays mounted. It has to outlast the SLOWEST
  * variant, since the markup can't tell which one CSS picked — at the base
