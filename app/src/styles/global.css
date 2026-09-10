@@ -456,6 +456,33 @@ button {
   --chapter-media-inset: var(--page-margin);
 }
 
+/* Fixed two-column test (desktop only — mobile keeps the shared stacked
+   fallback below): a fixed-width copy column, a fixed gap, then a
+   fixed-width media column the active example fills edge to edge. Overrides
+   the shared clamp-based .chapter-inner / absolutely-positioned .chapter-media
+   mechanism the other two layouts still use. */
+@media (min-width: 901px) {
+  .layout-panel {
+    gap: 125px;
+  }
+
+  .layout-panel .chapter-inner {
+    width: 600px;
+    max-width: 600px;
+    flex: none;
+  }
+
+  .layout-panel .chapter-media {
+    position: static;
+    top: auto;
+    right: auto;
+    transform: none;
+    width: 750px;
+    flex: none;
+    justify-content: center;
+  }
+}
+
 /* ================= layout: open (Rental Assistant) ================= */
 /* Same shared chapter-media mechanism as Applicant experience — contained
    (not edge-bled like Messaging), media scales down rather than overflowing. */
@@ -468,6 +495,30 @@ button {
   align-items: center;
   padding: var(--page-margin-top) var(--page-margin) var(--page-margin) var(--page-margin-left);
   --chapter-media-inset: var(--page-margin);
+}
+
+/* Same fixed two-column treatment as Applicant experience — see the
+   .layout-panel block above for the full rationale. */
+@media (min-width: 901px) {
+  .layout-open {
+    gap: 125px;
+  }
+
+  .layout-open .chapter-inner {
+    width: 600px;
+    max-width: 600px;
+    flex: none;
+  }
+
+  .layout-open .chapter-media {
+    position: static;
+    top: auto;
+    right: auto;
+    transform: none;
+    width: 750px;
+    flex: none;
+    justify-content: center;
+  }
 }
 
 /* ---- mobile: stacked column, locked type sizes, scroll instead of clip ---- */

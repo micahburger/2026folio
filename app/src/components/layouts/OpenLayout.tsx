@@ -10,21 +10,23 @@ import type { LayoutProps } from "./types";
  * body — with the media sitting in a second grid column that scales down
  * rather than overflowing. No progress dots, same as Applicant experience.
  */
+// Same fixed two-column treatment as Applicant experience (desktop only —
+// see the min-width:901px block in global.css): a 600px copy column, 125px
+// gap, 750px media column. Each example fills that width edge to edge up to
+// MEDIA_COLUMN_MAX_HEIGHT, then shrinks to fit the height and centers
+// horizontally instead (see MediaFrame's frameSize prop).
+const MEDIA_COLUMN_WIDTH = 750;
+const MEDIA_COLUMN_MAX_HEIGHT = 720;
+
 export default function OpenLayout({ project, gallery, interactive }: LayoutProps) {
   const current = project.media[gallery.index];
-  // One fixed box (the largest example's footprint) that every example
-  // renders inside of, so neither the text column nor the media position
-  // shift as examples swap — see MediaFrame's frameSize prop.
-  const frameSize = {
-    width: Math.max(...project.media.map((item) => item.width ?? 0)),
-    height: Math.max(...project.media.map((item) => item.height ?? 0)),
-  };
+  const frameSize = { width: MEDIA_COLUMN_WIDTH, height: MEDIA_COLUMN_MAX_HEIGHT };
 
   return (
     <div
       className="layout layout-open"
       data-theme={isLightColor(project.backgroundColor) ? "light" : "dark"}
-      style={{ color: project.textColor, "--media-w": `${frameSize.width}px` } as CSSProperties}
+      style={{ color: project.textColor } as CSSProperties}
     >
       <div className="chapter-inner">
         <div className="chapter-text">

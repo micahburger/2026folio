@@ -25,7 +25,7 @@ interface MediaGalleryProps extends MediaGalleryState {
   hideProgress?: boolean;
   /** Fixed box every example renders inside of (see MediaFrame) — omitted by
    * bleed layout (Messaging), which keeps each example at its own size. */
-  frameSize?: { width: number; height: number };
+  frameSize?: { width: number; height?: number };
 }
 
 const SWIPE_THRESHOLD_PX = 40;
