@@ -1,12 +1,15 @@
+import type { CSSProperties } from "react";
 import ProjectMeta from "../ProjectMeta";
-import ProjectCopy from "../ProjectCopy";
 import MediaGallery from "../MediaGallery";
+import { isLightColor } from "../../lib/color";
 import type { LayoutProps } from "./types";
 
 /**
- * Messaging: white, edge-to-edge, generous negative space. The media is
- * anchored to the right edge of the content column (not centered), and is
- * allowed to bleed past it for examples flagged `overflow`.
+ * Messaging: dark, edge-to-edge, generous negative space. Copy is one
+ * stacked column (pill, title, body) like Applicant experience — the media
+ * is anchored to the right edge of the full viewport (not the text column),
+ * and allowed to bleed further past it for examples flagged `overflow`. No
+ * progress dots, same as the other two chapters.
  *
  * Background color isn't set here — PortfolioShell's shared `.deck-background`
  * layer owns it so project-to-project color changes crossfade as one
@@ -16,23 +19,32 @@ export default function BleedLayout({ project, gallery, interactive }: LayoutPro
   const current = project.media[gallery.index];
 
   return (
-    <div className="layout layout-bleed" style={{ color: project.textColor }}>
-      <div className="bleed-inner">
-        <div className="bleed-text">
-          <ProjectMeta
-            title={project.title}
-            titleLines={project.titleLines}
-            disciplines={project.disciplines}
-          />
-          <ProjectCopy headline={project.headline} body={project.body} />
+    <div
+      className="layout layout-bleed"
+      data-theme={isLightColor(project.backgroundColor) ? "light" : "dark"}
+      style={{ color: project.textColor, "--media-w": `${current.width ?? 0}px` } as CSSProperties}
+    >
+      <div className="chapter-inner">
+        <div className="chapter-text">
+          <p className={`headline-pill headline-pill--${project.pillTheme}`}>{project.headline}</p>
+          <ProjectMeta title={project.title} titleLines={project.titleLines} disciplines={project.disciplines} />
+          <div className="project-body">
+            {project.body.map((paragraph, index) => (
+              <p key={index}>{paragraph}</p>
+            ))}
+          </div>
         </div>
-        <MediaGallery
-          media={project.media}
-          {...gallery}
-          interactive={interactive}
-          className={`bleed-media ${current.overflow ? "bleed-media--overflow" : ""}`}
-        />
       </div>
+      <MediaGallery
+        media={project.media}
+        {...gallery}
+        interactive={interactive}
+        hideProgress
+        style={current.edgeInset ? { right: current.edgeInset } : undefined}
+        className={`chapter-media ${current.overflow ? "chapter-media--overflow" : ""} ${
+          current.verticalAlign === "bottom" ? "chapter-media--bottom" : ""
+        }`}
+      />
     </div>
   );
 }

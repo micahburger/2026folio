@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, type CSSProperties } from "react";
 import type { ProjectMediaItem } from "../data/types";
 import MediaFrame from "./MediaFrame";
 
@@ -14,9 +14,18 @@ export interface MediaGalleryState {
 interface MediaGalleryProps extends MediaGalleryState {
   media: [ProjectMediaItem, ProjectMediaItem, ProjectMediaItem];
   className?: string;
+  /** Per-item positioning (e.g. bleed layout's edgeInset) — a layout computes
+   * this from the active item since the wrapper itself doesn't know which
+   * item is current. */
+  style?: CSSProperties;
   /** False while shown as a non-active overview preview — the whole preview
    * is one click target then, so the gallery must not intercept it. */
   interactive?: boolean;
+  /** Suppresses the built-in progress dots — set when a layout renders its own. */
+  hideProgress?: boolean;
+  /** Fixed box every example renders inside of (see MediaFrame) — omitted by
+   * bleed layout (Messaging), which keeps each example at its own size. */
+  frameSize?: { width: number; height: number };
 }
 
 const SWIPE_THRESHOLD_PX = 40;
@@ -30,7 +39,10 @@ export default function MediaGallery({
   goPrev,
   goTo,
   className = "",
+  style,
   interactive = true,
+  hideProgress = false,
+  frameSize,
 }: MediaGalleryProps) {
   const touchStartX = useRef<number | null>(null);
   const current = media[index];
@@ -74,6 +86,7 @@ export default function MediaGallery({
   return (
     <div
       className={`media-gallery ${className}`}
+      style={style}
       tabIndex={interactive ? 0 : undefined}
       role="group"
       aria-roledescription="media gallery"
@@ -93,35 +106,37 @@ export default function MediaGallery({
             data-direction={direction}
             aria-hidden="true"
           >
-            <MediaFrame item={media[previousIndex]} />
+            <MediaFrame item={media[previousIndex]} frameSize={frameSize} />
           </div>
         )}
         <div key={`enter-${index}`} className="media-layer media-layer--enter" data-direction={direction}>
-          <MediaFrame item={current} />
+          <MediaFrame item={current} frameSize={frameSize} />
         </div>
       </div>
 
-      <div className="media-progress" role={interactive ? "tablist" : undefined} aria-label="UI examples">
-        {media.map((item, i) =>
-          interactive ? (
-            <button
-              key={item.id}
-              role="tab"
-              aria-selected={i === index}
-              className={`media-progress-mark ${i === index ? "is-active" : ""}`}
-              onClick={(event) => {
-                event.stopPropagation();
-                goTo(i);
-              }}
-            />
-          ) : (
-            <span
-              key={item.id}
-              className={`media-progress-mark ${i === index ? "is-active" : ""}`}
-            />
-          )
-        )}
-      </div>
+      {!hideProgress && (
+        <div className="media-progress" role={interactive ? "tablist" : undefined} aria-label="UI examples">
+          {media.map((item, i) =>
+            interactive ? (
+              <button
+                key={item.id}
+                role="tab"
+                aria-selected={i === index}
+                className={`media-progress-mark ${i === index ? "is-active" : ""}`}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  goTo(i);
+                }}
+              />
+            ) : (
+              <span
+                key={item.id}
+                className={`media-progress-mark ${i === index ? "is-active" : ""}`}
+              />
+            )
+          )}
+        </div>
+      )}
     </div>
   );
 }

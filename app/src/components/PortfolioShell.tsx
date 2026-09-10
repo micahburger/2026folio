@@ -4,6 +4,7 @@ import ProjectView from "./ProjectView";
 import ProjectProgress from "./ProjectProgress";
 import { fadeIn, fadeOut, zoomFromOverview, zoomToOverview, type Rect } from "../flip";
 import { DECK_TRANSITION_MS, prefersReducedMotion } from "../motion";
+import { isLightColor } from "../lib/color";
 
 interface PortfolioShellProps {
   projects: Project[];
@@ -15,8 +16,10 @@ const WHEEL_MIN_DELTA = 12;
 const WHEEL_COOLDOWN_MS = DECK_TRANSITION_MS + 150;
 const SWIPE_THRESHOLD_PX = 48;
 
+// Named seam (not just `.backgroundColor` inline) so a future layout-specific
+// page color is a one-line change here instead of an audit of every call site.
 function pageColorFor(project: Project) {
-  return project.layout === "panel" ? "#FFFFFF" : project.backgroundColor;
+  return project.backgroundColor;
 }
 
 function indexForSlug(projects: Project[], pathname: string) {
@@ -243,18 +246,26 @@ export default function PortfolioShell({ projects }: PortfolioShellProps) {
       : undefined;
   }
 
+  const headerColor =
+    viewMode === "overview"
+      ? "#F5F4F1"
+      : isLightColor(pageColorFor(projects[activeProject]))
+        ? "#1C1C1C"
+        : "#F5F4F1";
+
   return (
     <div className={`shell ${viewMode === "overview" ? "shell--overview" : ""}`}>
-      <header className="shell-header">
+      <header className="shell-header" style={{ color: headerColor }}>
+        <span className="shell-name">Micah Lindenberger</span>
         <button
           type="button"
-          className="shell-label shell-label--interactive"
+          className="shell-menu-button"
+          style={{ background: headerColor, color: viewMode === "overview" ? "#000000" : pageColorFor(projects[activeProject]) }}
           onClick={() => (viewMode === "overview" ? closeOverview(activeProject) : openOverview())}
         >
-          Micah Lindenberger
-          {viewMode === "overview" && <span className="shell-label-tag">Close</span>}
+          {viewMode === "overview" ? "Close" : "Menu"}
         </button>
-        <span className="shell-label">2026</span>
+        <span className="shell-tagline">2026 Mini portfolio</span>
       </header>
 
       {viewMode === "project" && (

@@ -4,6 +4,7 @@ import { useMediaGallery } from "../hooks/useMediaGallery";
 import BleedLayout from "./layouts/BleedLayout";
 import PanelLayout from "./layouts/PanelLayout";
 import OpenLayout from "./layouts/OpenLayout";
+import ResumeLayout from "./layouts/ResumeLayout";
 
 const LAYOUTS = {
   bleed: BleedLayout,
@@ -38,15 +39,15 @@ const ProjectView = forwardRef<HTMLDivElement, ProjectViewProps>(function Projec
   ref
 ) {
   const isFocused = viewMode === "project" && isActiveProject;
+  // Resume has no media gallery — pass a 0 count so the hook stays inert
+  // rather than skipping it (hooks can't be called conditionally).
   const gallery = useMediaGallery({
-    count: project.media.length,
+    count: project.layout === "resume" ? 0 : project.media.length,
     isActive: isActiveProject,
     initialIndex,
     onIndexChange,
     autoplay: isFocused,
   });
-
-  const Layout = LAYOUTS[project.layout];
 
   // In focused project mode, off-screen slides sit fully out of the DOM's
   // focus/hit-test order — otherwise tabbing into them can scroll the
@@ -67,6 +68,14 @@ const ProjectView = forwardRef<HTMLDivElement, ProjectViewProps>(function Projec
 
   const isClickableOverviewCell = viewMode === "overview";
   const galleryInteractive = isFocused;
+
+  let content: JSX.Element;
+  if (project.layout === "resume") {
+    content = <ResumeLayout project={project} />;
+  } else {
+    const Layout = LAYOUTS[project.layout];
+    content = <Layout project={project} gallery={gallery} interactive={galleryInteractive} />;
+  }
 
   return (
     <div
@@ -89,7 +98,7 @@ const ProjectView = forwardRef<HTMLDivElement, ProjectViewProps>(function Projec
           : undefined
       }
     >
-      <Layout project={project} gallery={gallery} interactive={galleryInteractive} />
+      {content}
     </div>
   );
 });

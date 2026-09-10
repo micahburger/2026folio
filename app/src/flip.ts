@@ -75,7 +75,10 @@ export function zoomToOverview(
   backgroundColor: string
 ): Animation {
   const cell = cellEl.getBoundingClientRect();
-  const scale = cell.width / fromRect.width;
+  // Cover, not fit-by-width — must match .project-view--overview's own
+  // scale(max(...)) in global.css, or the element pops to a different size
+  // the instant the animation ends and CSS takes back over.
+  const scale = Math.max(cell.width / fromRect.width, cell.height / fromRect.height);
   const targetTransform = `translate(${cell.left}px, ${cell.top}px) scale(${scale})`;
 
   element.style.transformOrigin = "top left";
@@ -95,8 +98,8 @@ export function zoomToOverview(
  * its grid cell was — `cellRect` must be captured BEFORE the mode switch,
  * while the overview grid was still laid out. */
 export function zoomFromOverview(element: HTMLElement, cellRect: Rect, backgroundColor: string): Animation {
-  const viewportWidth = window.innerWidth;
-  const scale = cellRect.width / viewportWidth;
+  // Cover, not fit-by-width — see the matching comment in zoomToOverview.
+  const scale = Math.max(cellRect.width / window.innerWidth, cellRect.height / window.innerHeight);
   const startTransform = `translate(${cellRect.left}px, ${cellRect.top}px) scale(${scale})`;
 
   element.style.transformOrigin = "top left";

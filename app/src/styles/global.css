@@ -1,3 +1,37 @@
+@font-face {
+  font-family: "Proxima Nova";
+  src: url("../assets/fonts/ProximaNova-Regular.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  /* Locked page margins — the one value every chapter's outer padding reads
+     from, so nudging it moves every chapter at once. Left is its own token
+     (wider than the other three sides) since every chapter's copy column
+     sits inset further from the left edge than from the right/top/bottom. */
+  --page-margin: 64px;
+  --page-margin-left: 140px;
+  --page-margin-top: 130px;
+  --page-margin-mobile: 28px;
+  --page-margin-top-mobile: 96px;
+
+  /* The gap reserved between the text column and the media, as a fraction
+     of the available content width (viewport minus the left/right page
+     margins) — 0.25 = 25%. One shared value for all three chapters; dial
+     this to taste rather than adjusting each chapter separately. */
+  --content-gap: 0.25;
+
+  /* Headline pill colors — see .headline-pill--* below. Add a new named
+     variant here (and to PillTheme in data/types.ts) rather than hardcoding
+     a one-off color on a project. */
+  --pill-green-bg: #78c598;
+  --pill-green-fg: #ffffff;
+  --pill-blue-bg: #d8e5ff;
+  --pill-blue-fg: #0f214a;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -48,11 +82,7 @@ button {
   height: 100dvh;
   overflow-y: auto;
   overflow-x: hidden;
-  background: #4c4c4c;
-}
-
-.shell--overview .shell-header {
-  color: #f5f4f1;
+  background: #000000;
 }
 
 .shell-header {
@@ -61,38 +91,38 @@ button {
   left: 0;
   right: 0;
   display: flex;
-  justify-content: space-between;
+  align-items: center;
+  justify-content: center;
+  gap: 28px;
   padding: 28px 40px;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
   z-index: 20;
+  font-family: "Inter", -apple-system, "Helvetica Neue", Arial, sans-serif;
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  transition: color 400ms ease;
 }
 
-.shell-label {
+.shell-name {
+  text-transform: uppercase;
   pointer-events: none;
 }
 
-.shell-label--interactive {
+.shell-tagline {
+  pointer-events: none;
+}
+
+.shell-menu-button {
   pointer-events: auto;
-  display: inline-flex;
-  align-items: baseline;
-  gap: 8px;
-  opacity: 1;
-  transition: opacity 200ms ease;
+  padding: 10px 22px;
+  border-radius: 999px;
+  font: inherit;
+  transition: background-color 400ms ease, color 400ms ease, opacity 200ms ease;
 }
 
-.shell-label--interactive:hover {
-  opacity: 0.6;
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
-
-.shell-label-tag {
-  font-size: 10px;
-  letter-spacing: 0.1em;
-  opacity: 0.5;
+.shell-menu-button:hover {
+  opacity: 0.85;
 }
 
 .shell-rail {
@@ -134,7 +164,9 @@ button {
   width: 100%;
   aspect-ratio: 1440 / 900;
   overflow: hidden;
-  container-type: inline-size;
+  /* Full size containment (not just inline-size) so cqh below has something
+     to resolve against — needed for the cover-style scale on the child. */
+  container-type: size;
 }
 
 /* ================= project view ================= */
@@ -173,7 +205,13 @@ button {
   width: 100vw;
   height: 100dvh;
   transform-origin: top left;
-  transform: scale(calc(100cqw / 100vw));
+  /* Cover, not fit-by-width: whichever axis needs the bigger scale to fully
+     cover the cell wins, so the real viewport's aspect ratio (which rarely
+     matches the cell's fixed 1440:900) never leaves a gap on the other
+     axis — it crops slightly instead, matching .overview-frame's own
+     overflow:hidden. Width-only scaling left a visible band on whichever
+     side was shorter than the assumed ratio. */
+  transform: scale(max(calc(100cqw / 100vw), calc(100cqh / 100dvh)));
   cursor: pointer;
 }
 
@@ -262,10 +300,11 @@ button {
 
 .project-title {
   margin: 0;
-  font-size: clamp(40px, 4.2vw, 64px);
-  font-weight: 800;
-  line-height: 1.02;
-  letter-spacing: -0.01em;
+  font-family: "Proxima Nova", "Inter", -apple-system, "Helvetica Neue", Arial, sans-serif;
+  font-weight: 400;
+  font-size: clamp(40px, 5.2vw, 94px);
+  line-height: 0.79;
+  letter-spacing: -0.03em;
 }
 
 .project-title--stacked {
@@ -274,84 +313,128 @@ button {
   line-height: 0.94;
 }
 
-.project-title--stacked .title-line {
+/* Not scoped to --stacked: any .project-title using .title-line spans wants
+   them as separate lines, whether or not it also opts into the bigger/bolder
+   --stacked treatment (Resume's "Work"/"history" uses .title-line at the
+   shared 94px weight, not --stacked's 96px/900). */
+.title-line {
   display: block;
 }
 
+/* Not shown in any chapter's current design — kept in the DOM (ProjectMeta
+   still accepts the data) rather than deleted, in case a future chapter
+   wants it back, but hidden as a shared default rather than three identical
+   per-layout overrides. */
 .project-disciplines {
+  display: none;
   margin: 20px 0 0;
   font-size: 13px;
   letter-spacing: 0.02em;
   opacity: 0.75;
 }
 
-.project-headline {
-  margin: 0;
-  font-size: clamp(22px, 2vw, 30px);
-  font-weight: 500;
-  line-height: 1.2;
-}
-
 .project-body {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  margin-top: 24px;
 }
 
 .project-body p {
   margin: 0;
-  font-size: 15px;
-  line-height: 1.55;
-  opacity: 0.85;
+  font-family: "Inter", -apple-system, "Helvetica Neue", Arial, sans-serif;
+  font-size: 18px;
+  line-height: 1.4;
+  letter-spacing: 0;
+  opacity: 1;
 }
 
-/* ================= layout: bleed (Messaging) ================= */
+/* ================= chapter text column (shared) ================= */
+/* The stacked pill/title/body/dots column is identical across all three
+   layouts — only the media side differs per layout, which is where the
+   real per-project variation lives. */
 
-.layout-bleed {
+.chapter-text {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: flex-start;
+  align-self: center;
+  gap: 28px;
 }
 
-.bleed-inner {
-  position: relative;
+.chapter-text .project-meta,
+.chapter-text .media-progress {
+  margin: 0;
+}
+
+.headline-pill {
+  display: inline-flex;
+  align-items: center;
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: 999px;
+  font-family: "Inter", -apple-system, "Helvetica Neue", Arial, sans-serif;
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+}
+
+.headline-pill--green {
+  background: var(--pill-green-bg);
+  color: var(--pill-green-fg);
+}
+
+.headline-pill--blue {
+  background: var(--pill-blue-bg);
+  color: var(--pill-blue-fg);
+}
+
+/* ================= chapter media (shared by all three chapters) ================= */
+/* One mechanism instead of three: text sits in normal flow inside
+   .chapter-inner, whose max-width reserves room for the active media item
+   (--media-w, set inline per layout from the current item's width) plus a
+   --content-gap fraction of the available space. Media itself is absolutely
+   positioned against the chapter root — --chapter-media-inset is 0 for
+   Messaging (bleeds to the real edge) and var(--page-margin) for Applicant
+   experience / Rental Assistant (contained, same margin as everything
+   else); a per-item `edgeInset` still wins over either via inline style. */
+
+.chapter-inner {
   width: 100%;
-  max-width: 1760px;
-  height: 100%;
-  margin: 0 auto;
-  display: flex;
-  align-items: center;
-  padding-left: 64px;
+  max-width: clamp(
+    320px,
+    calc((100vw - var(--page-margin-left) - var(--page-margin)) * (1 - var(--content-gap)) - var(--media-w, 0px)),
+    560px
+  );
 }
 
-.bleed-text {
-  display: flex;
-  align-items: center;
-  gap: 56px;
-  max-width: 900px;
-}
-
-.bleed-text .project-meta {
-  flex: 0 0 auto;
-  width: 340px;
-}
-
-.bleed-text .project-copy {
-  flex: 0 0 auto;
-  max-width: 480px;
-}
-
-.bleed-media {
+.chapter-media {
   position: absolute;
-  right: 0;
+  right: var(--chapter-media-inset, 0px);
   top: 50%;
   transform: translateY(-50%);
   display: flex;
   justify-content: flex-end;
 }
 
-.bleed-media--overflow .media-frame--desktop {
+.chapter-media--overflow .media-frame--desktop {
   transform: translateX(56px);
+}
+
+.chapter-media--bottom {
+  top: auto;
+  bottom: 0;
+  transform: none;
+}
+
+/* ================= layout: bleed (Messaging) ================= */
+
+.layout-bleed {
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding: var(--page-margin-top) var(--page-margin) var(--page-margin) var(--page-margin-left);
+  --chapter-media-inset: 0px;
 }
 
 /* ================= layout: panel (Applicant experience) ================= */
@@ -359,55 +442,298 @@ button {
 .layout-panel-wrap {
   width: 100%;
   height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 110px 40px 64px;
 }
 
+/* Full-bleed: the project's color fills the entire viewport, no inset card. */
 .layout-panel {
   width: 100%;
-  max-width: 1760px;
   height: 100%;
-  max-height: 900px;
-  margin: 0 auto;
-  border-radius: 28px;
-  padding: 72px;
+  position: relative;
+  padding: var(--page-margin-top) var(--page-margin) var(--page-margin) var(--page-margin-left);
   display: flex;
   align-items: center;
   transition: background-color 400ms ease, color 400ms ease;
+  --chapter-media-inset: var(--page-margin);
 }
 
-.panel-content {
-  display: grid;
-  grid-template-columns: minmax(220px, 380px) minmax(300px, 1fr) minmax(280px, 460px);
-  column-gap: 56px;
-  align-items: center;
-  width: 100%;
-}
-
-/* ================= layout: open (AI Assistant) ================= */
+/* ================= layout: open (Rental Assistant) ================= */
+/* Same shared chapter-media mechanism as Applicant experience — contained
+   (not edge-bled like Messaging), media scales down rather than overflowing. */
 
 .layout-open {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding: var(--page-margin-top) var(--page-margin) var(--page-margin) var(--page-margin-left);
+  --chapter-media-inset: var(--page-margin);
+}
+
+/* ---- mobile: stacked column, locked type sizes, scroll instead of clip ---- */
+/* Below this width a chapter is taller than one screen (copy stack + a
+   full-width UI example), so the desktop's one-screen-per-project slide
+   deck switches to a normal scrolling page. Shared shell rules only grow
+   (height:auto + min-height keeps them full-bleed when content is short) —
+   covers all three chapters now (panel/bleed/open). */
+@media (max-width: 900px) {
+  .shell {
+    height: auto;
+    min-height: 100dvh;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+
+  .shell-rail,
+  .project-view,
+  .overview-frame,
+  .layout,
+  .layout-panel-wrap,
+  .layout-panel,
+  .layout-open {
+    height: auto;
+    min-height: 100dvh;
+  }
+
+  /* Chapter text column: same 100%-width, tighter-gap treatment for all
+     three layouts once stacked. */
+  .chapter-text {
+    width: 100%;
+    gap: 24px;
+  }
+
+  /* All three chapters share one mechanism now: the media is absolutely
+     positioned on desktop (flush-edge for Messaging, inset for the other
+     two) — that has no in-flow height, so it collapses to nothing once the
+     row is this narrow. Drop it back into normal flow, stacked below the
+     text, for all three the same way. */
+  .layout-bleed,
+  .layout-panel,
+  .layout-open {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: var(--page-margin-top-mobile) var(--page-margin-mobile) var(--page-margin);
+    gap: 48px;
+  }
+
+  .chapter-inner {
+    max-width: none;
+  }
+
+  .chapter-media {
+    position: static;
+    transform: none;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .chapter-media--overflow .media-frame--desktop {
+    transform: none;
+  }
+
+  .layout-bleed .media-frame,
+  .layout-panel .media-frame,
+  .layout-open .media-frame {
+    margin: 0 auto;
+    max-width: 100%;
+  }
+
+  .project-title {
+    font-size: 64px;
+    line-height: 0.88;
+    letter-spacing: -0.03em;
+  }
+
+  .project-body p {
+    font-size: 16px;
+    line-height: 1.4;
+  }
+}
+
+@media (max-width: 600px) {
+  .shell-header {
+    gap: 12px;
+    padding: 20px 20px;
+  }
+
+  .shell-name,
+  .shell-tagline {
+    font-size: 11px;
+  }
+
+  .shell-menu-button {
+    padding: 8px 16px;
+    font-size: 12px;
+  }
+}
+
+/* ================= layout: resume ================= */
+/* The only chapter that scrolls — .layout-resume itself stays pinned to
+   the viewport (like every other chapter) and scrolls its own overflow,
+   rather than growing past 100dvh, so the deck/overview transform math
+   (which assumes each chapter is exactly one screen) still holds. */
+
+.layout-resume {
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* In the overview grid this chapter is only ever shown at scrollTop 0, so
+   it reads as a cropped preview rather than an inert scrollable thumbnail. */
+.project-view--overview .layout-resume {
+  overflow: hidden;
+}
+
+.resume-content {
+  /* Shared by .resume-work and .resume-contact below so the logo column and
+     the contact-details column always start at the same x, regardless of
+     either section's own content width. */
+  --resume-label-col: minmax(240px, 380px);
+  max-width: 1760px;
+  margin: 0 auto;
+  padding: var(--page-margin-top) var(--page-margin) 160px var(--page-margin-left);
+}
+
+.resume-work {
+  display: grid;
+  grid-template-columns: var(--resume-label-col) 1fr;
+  column-gap: 64px;
+  align-items: start;
+}
+
+.work-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 56px;
+}
+
+.work-history-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
+}
+
+.work-history-logo {
+  flex: 0 0 auto;
+  width: 72px;
+  height: 72px;
+  border-radius: 18px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  object-fit: cover;
+}
+
+.work-history-text {
+  min-width: 0;
+}
+
+.work-history-company {
+  margin: 0 0 2px;
+  font-family: "Inter", -apple-system, "Helvetica Neue", Arial, sans-serif;
+  font-weight: 400;
+  font-size: 15px;
+}
+
+.work-history-role {
+  margin: 0 0 8px;
+  font-family: "Inter", -apple-system, "Helvetica Neue", Arial, sans-serif;
+  font-weight: 500;
+  font-size: 24px;
+}
+
+.work-history-meta {
+  margin: 0;
+  font-family: "Inter", -apple-system, "Helvetica Neue", Arial, sans-serif;
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 1.4;
+  letter-spacing: 0;
+  opacity: 0.65;
+}
+
+.resume-contact {
+  display: grid;
+  grid-template-columns: var(--resume-label-col) 1fr;
+  column-gap: 64px;
+  align-items: start;
+  margin-top: 160px;
+}
+
+.resume-contact-subtitle {
+  margin: 12px 0 0;
+  font-family: "Inter", -apple-system, "Helvetica Neue", Arial, sans-serif;
+  font-size: 18px;
+}
+
+/* Photo + links grouped in the grid's second column, same x as the work
+   history logos above — see the shared --resume-label-col on .resume-content. */
+.resume-contact-details {
+  display: flex;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 64px;
+}
+
+.resume-contact-photo {
+  flex: 0 0 auto;
+  width: 220px;
+  height: 220px;
+  border-radius: 24px;
+  object-fit: cover;
+}
+
+.resume-contact-photo--placeholder {
   display: flex;
   align-items: center;
   justify-content: center;
+  background: #f0f0f0;
+  color: #8a8a8a;
+  font-size: 13px;
+  text-align: center;
+  padding: 16px;
 }
 
-.open-content {
-  width: 100%;
-  max-width: 1760px;
-  margin: 0 auto;
-  padding: 0 96px;
-  display: grid;
-  grid-template-columns: minmax(280px, 520px) minmax(300px, 1fr) minmax(280px, 460px);
-  column-gap: 88px;
-  align-items: center;
+.resume-contact-links {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  font-family: "Inter", -apple-system, "Helvetica Neue", Arial, sans-serif;
+  font-size: 20px;
 }
 
-.panel-content > *,
-.open-content > * {
-  min-width: 0;
+.resume-contact-links a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.resume-contact-links a.is-underlined {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+@media (max-width: 900px) {
+  .resume-content {
+    padding: var(--page-margin-top-mobile) var(--page-margin-mobile) 96px;
+  }
+
+  .resume-work {
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+  }
+
+  .resume-contact {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    margin-top: 96px;
+    gap: 32px;
+  }
+
+  .resume-contact-details {
+    gap: 32px;
+  }
 }
 
 /* ================= media gallery ================= */
@@ -423,57 +749,33 @@ button {
 .media-stage {
   position: relative;
   cursor: pointer;
+  display: grid;
 }
 
+/* Both layers share the same grid cell, so the stage sizes itself to
+   whichever frame is larger instead of snapping to the entering item's
+   size — the exiting frame keeps its own dimensions instead of being
+   squeezed to fit the incoming item's box, which is what made the old
+   position:absolute/inset:0 version look distorted mid-fade. */
 .media-layer {
+  grid-area: 1 / 1;
   display: flex;
   align-items: center;
   justify-content: center;
+  animation: media-fade 420ms ease forwards;
 }
 
 .media-layer--exit {
-  position: absolute;
-  inset: 0;
-  animation: media-exit 420ms cubic-bezier(0.65, 0, 0.35, 1) forwards;
+  animation-direction: reverse;
   pointer-events: none;
 }
 
-.media-layer--enter {
-  animation: media-enter 420ms cubic-bezier(0.65, 0, 0.35, 1) forwards;
-}
-
-.media-layer--exit[data-direction="1"] {
-  --shift: -32px;
-}
-.media-layer--exit[data-direction="-1"] {
-  --shift: 32px;
-}
-.media-layer--enter[data-direction="1"] {
-  --shift: 32px;
-}
-.media-layer--enter[data-direction="-1"] {
-  --shift: -32px;
-}
-
-@keyframes media-exit {
-  from {
-    opacity: 1;
-    transform: translateX(0) scale(1);
-  }
-  to {
-    opacity: 0;
-    transform: translateX(var(--shift)) scale(1);
-  }
-}
-
-@keyframes media-enter {
+@keyframes media-fade {
   from {
     opacity: 0;
-    transform: translateX(var(--shift)) scale(0.985);
   }
   to {
     opacity: 1;
-    transform: translateX(0) scale(1);
   }
 }
 
@@ -488,6 +790,9 @@ button {
   letter-spacing: 0.04em;
   text-align: center;
   padding: 16px;
+  /* Scale down (never up) once the column is narrower than the item's own
+     width, keeping its aspect ratio via the inline width/aspect-ratio. */
+  max-width: 100%;
 }
 
 .media-frame img {
@@ -496,16 +801,11 @@ button {
   object-fit: contain;
 }
 
-.media-frame--has-image {
-  background: none;
-  border: none;
-  box-shadow: none;
-}
-
 .media-frame--phone {
   width: 260px;
   aspect-ratio: 9 / 19;
   border-radius: 36px;
+  overflow: hidden;
   box-shadow: 0 30px 60px rgba(0, 0, 0, 0.18);
 }
 
@@ -523,6 +823,22 @@ button {
   box-shadow: 0 24px 48px rgba(0, 0, 0, 0.16);
 }
 
+/* Flat, no device/card chrome — every current example across all three
+   chapters is a real image export with its own polish baked in, so the
+   generic phone/card/desktop treatment shadow and radius above are switched
+   off here rather than per-layout. Must come AFTER those rules: same
+   specificity (one class each), so source order decides the tie — this used
+   to sit above them, which silently let the treatment shadow/radius win
+   back. An item can still opt back into a radius via its own `radius`
+   field (applies as an inline style, so it wins over this either way). */
+.media-frame--has-image,
+.media-frame--has-content {
+  background: none;
+  border: none;
+  box-shadow: none;
+  border-radius: 0;
+}
+
 .media-progress {
   display: flex;
   gap: 8px;
@@ -538,6 +854,18 @@ button {
 .media-progress-mark.is-active {
   background: currentColor;
   opacity: 0.9;
+}
+
+/* Any chapter can carry a `data-theme="dark"` chapter root (each layout
+   computes this from its own background via lib/color's isLightColor) — the
+   defaults above assume a light chapter, so dark ones get inverted marks. */
+[data-theme="dark"] .media-progress-mark {
+  background: rgba(245, 244, 241, 0.3);
+}
+
+[data-theme="dark"] .media-progress-mark.is-active {
+  background: #6c87e8;
+  opacity: 1;
 }
 
 /* ================= project progress (deck-level) ================= */
@@ -566,9 +894,10 @@ button {
 
 @media (min-width: 2000px) {
   .layout-bleed,
-  .layout-open {
-    padding-left: max(0px, calc((100vw - 2000px) / 2));
-    padding-right: max(0px, calc((100vw - 2000px) / 2));
+  .layout-open,
+  .layout-panel {
+    padding-left: max(var(--page-margin-left), calc((100vw - 2000px) / 2 + var(--page-margin-left) - var(--page-margin)));
+    padding-right: max(var(--page-margin), calc((100vw - 2000px) / 2));
   }
 }
 
