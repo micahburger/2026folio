@@ -143,8 +143,13 @@ button {
 
 @media (max-width: 900px) {
   .shell-rail--overview {
+    /* Gutter is a variable because the card height below has to derive from
+       the column width, and there's no way to reference an element's own
+       computed width from its height. */
+    --overview-gutter: 24px;
+    --overview-card-w: calc((100vw - var(--overview-gutter) * 2) * 0.9);
     grid-template-columns: 1fr;
-    padding: 120px 24px 64px;
+    padding: 120px var(--overview-gutter) 64px;
     gap: 40px;
   }
 }
@@ -519,14 +524,22 @@ button {
      to identity and every cell rendered its project at full size and got
      cropped by the frame. Restoring the two overview variants here (later
      in the cascade, same specificity) puts the preview grid back. */
+  /* A desktop-shaped 1440/900 card showing a tall phone page is mostly a crop
+     of half a title, so on a phone the card takes the phone's shape instead.
+     It sits at 90% of the column and loses 40px off the bottom: shorter cards
+     mean the next one breaks the fold, which is the only thing telling a
+     visitor this grid scrolls. The preview inside is anchored top-left and
+     scales off the card's width, so the shorter height crops the bottom
+     rather than squashing anything.
+
+     Height is spelled out from the card width instead of coming from
+     aspect-ratio, because a fixed 40px trim isn't expressible as a ratio. */
   .overview-frame--overview {
-    height: auto;
+    width: var(--overview-card-w);
+    margin-inline: auto;
+    aspect-ratio: auto;
+    height: calc(var(--overview-card-w) * 16 / 9 - 40px);
     min-height: 0;
-    /* A desktop-shaped 1440/900 card showing a tall phone page is mostly a
-       crop of the pill and half a title. A card holds one screen of its
-       project, so on a phone it takes the phone's shape and shows that
-       first screen whole — same idea the desktop grid already reads as. */
-    aspect-ratio: 9 / 16;
   }
 
   .project-view--overview {
