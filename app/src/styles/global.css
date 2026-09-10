@@ -16,12 +16,6 @@
   --page-margin-top: 130px;
   --page-margin-mobile: 28px;
   --page-margin-top-mobile: 96px;
-
-  /* The gap reserved between the text column and the media, as a fraction
-     of the available content width (viewport minus the left/right page
-     margins) — 0.25 = 25%. One shared value for all three chapters; dial
-     this to taste rather than adjusting each chapter separately. */
-  --content-gap: 0.25;
 }
 
 * {
@@ -371,44 +365,23 @@ button {
 }
 
 /* ================= chapter media (shared by all three chapters) ================= */
-/* One mechanism instead of three: text sits in normal flow inside
-   .chapter-inner, whose max-width reserves room for the active media item
-   (--media-w, set inline per layout from the current item's width) plus a
-   --content-gap fraction of the available space. Media itself is absolutely
-   positioned against the chapter root — --chapter-media-inset is 0 for
-   Messaging (bleeds to the real edge) and var(--page-margin) for Applicant
-   experience / Rental Assistant (contained, same margin as everything
-   else); a per-item `edgeInset` still wins over either via inline style. */
+/* Every example is now exported onto the same 786px canvas with its own
+   framing and background composed in, so all three chapters lay out
+   identically: a copy column beside one media box, both in normal flow.
+   The machinery this replaces — a clamp that reserved room for whichever
+   example was active, an absolutely-positioned media block, per-example edge
+   insets and vertical anchors — existed only to reconcile examples that were
+   all different sizes. */
 
 .chapter-inner {
   width: 100%;
-  max-width: clamp(
-    320px,
-    calc((100vw - var(--page-margin-left) - var(--page-margin)) * (1 - var(--content-gap)) - var(--media-w, 0px)),
-    560px
-  );
 }
 
-/* Deliberately not transitioned. Animating the anchor properties made each
-   example slide and jitter into place on top of the crossfade; the examples
-   just cut to their positions while the images fade. */
 .chapter-media {
-  position: absolute;
-  right: var(--chapter-media-inset, 0px);
-  top: 50%;
-  transform: translateY(-50%);
   display: flex;
-  justify-content: flex-end;
-}
-
-.chapter-media--overflow .media-frame--desktop {
-  transform: translateX(56px);
-}
-
-.chapter-media--bottom {
-  top: auto;
-  bottom: 0;
-  transform: none;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
 }
 
 /* ================= layout: bleed (Messaging) ================= */
@@ -418,39 +391,6 @@ button {
   display: flex;
   align-items: center;
   padding: var(--page-margin-top) var(--page-margin) var(--page-margin) var(--page-margin-left);
-  --chapter-media-inset: 0px;
-}
-
-/* Copy column matched to the other two chapters: a 600px target that gives
-   ground proportionally as the viewport narrows, rather than the old clamp
-   that bottomed out at 320px and stayed there — which read as cramped next
-   to them, and at 1280px let the copy run 60px underneath the artwork.
-
-   The media here is anchored to the viewport edge rather than sharing a
-   flex row, so it can't shrink by flex the way the other chapters' does;
-   capping it against the space the copy leaves is the equivalent. Each
-   example keeps its own anchor — edge-flush, bottom, or inset — and only
-   scales once there isn't room for it at full size. */
-@media (min-width: 901px) {
-  .layout-bleed {
-    --copy-w: min(
-      600px,
-      calc((100vw - var(--page-margin-left) - var(--page-margin)) * 0.42)
-    );
-  }
-
-  .layout-bleed .chapter-inner {
-    width: var(--copy-w);
-    max-width: var(--copy-w);
-    flex: 0 1 auto;
-    min-width: 0;
-  }
-
-  .layout-bleed .chapter-media {
-    max-width: calc(
-      100vw - var(--page-margin-left) - var(--copy-w) - clamp(48px, 8vw, 125px)
-    );
-  }
 }
 
 /* ================= layout: panel (Applicant experience) ================= */
@@ -469,50 +409,9 @@ button {
   display: flex;
   align-items: center;
   transition: background-color 400ms ease, color 400ms ease;
-  --chapter-media-inset: var(--page-margin);
-}
-
-/* Fixed two-column layout (desktop only — mobile keeps the shared stacked
-   fallback below): a 600px copy column, a 125px gap, then a 750px media
-   column the active example fills. Overrides the shared clamp-based
-   .chapter-inner / absolutely-positioned .chapter-media mechanism the
-   bleed layout still uses.
-
-   Those three values need 1679px once the page margins are counted, so
-   they're targets rather than hard sizes: both columns may shrink and the
-   gap is fluid. Pinning them with `flex: none` clipped the media column off
-   the right edge on any narrower screen — 175px lost at 1440px, and at
-   1024px the artwork sat entirely offscreen, leaving a portfolio page with
-   no work on it. At 1680px and up nothing shrinks and the intended
-   proportions render exactly. */
-@media (min-width: 901px) {
-  .layout-panel {
-    gap: clamp(48px, 8vw, 125px);
-  }
-
-  .layout-panel .chapter-inner {
-    width: 600px;
-    max-width: 600px;
-    flex: 0 1 600px;
-    min-width: 0;
-  }
-
-  .layout-panel .chapter-media {
-    position: static;
-    top: auto;
-    right: auto;
-    transform: none;
-    width: 750px;
-    max-width: 750px;
-    flex: 0 1 750px;
-    min-width: 0;
-    justify-content: center;
-  }
 }
 
 /* ================= layout: open (Rental Assistant) ================= */
-/* Same shared chapter-media mechanism as Applicant experience — contained
-   (not edge-bled like Messaging), media scales down rather than overflowing. */
 
 .layout-open {
   width: 100%;
@@ -521,17 +420,23 @@ button {
   display: flex;
   align-items: center;
   padding: var(--page-margin-top) var(--page-margin) var(--page-margin) var(--page-margin-left);
-  --chapter-media-inset: var(--page-margin);
 }
 
-/* Same fixed two-column treatment as Applicant experience — see the
-   .layout-panel block above for the full rationale, including why these
-   columns shrink instead of holding their exact widths. */
+/* One rule for all three chapters: a 600px copy column, a fluid gap, and the
+   786px media box. Those plus the page margins want ~1715px, so they're
+   targets rather than hard sizes — both columns give ground proportionally
+   below that. Pinning them previously clipped the artwork clean off the
+   right edge on anything smaller. The media also yields on height, so a
+   short viewport scales the box down instead of cropping it. */
 @media (min-width: 901px) {
+  .layout-bleed,
+  .layout-panel,
   .layout-open {
     gap: clamp(48px, 8vw, 125px);
   }
 
+  .layout-bleed .chapter-inner,
+  .layout-panel .chapter-inner,
   .layout-open .chapter-inner {
     width: 600px;
     max-width: 600px;
@@ -539,16 +444,14 @@ button {
     min-width: 0;
   }
 
+  .layout-bleed .chapter-media,
+  .layout-panel .chapter-media,
   .layout-open .chapter-media {
-    position: static;
-    top: auto;
-    right: auto;
-    transform: none;
-    width: 750px;
-    max-width: 750px;
-    flex: 0 1 750px;
+    width: 786px;
+    max-width: 786px;
+    flex: 0 1 786px;
     min-width: 0;
-    justify-content: center;
+    max-height: 100%;
   }
 }
 
@@ -638,11 +541,7 @@ button {
     gap: 24px;
   }
 
-  /* All three chapters share one mechanism now: the media is absolutely
-     positioned on desktop (flush-edge for Messaging, inset for the other
-     two) — that has no in-flow height, so it collapses to nothing once the
-     row is this narrow. Drop it back into normal flow, stacked below the
-     text, for all three the same way. */
+  /* Stacked below the copy once the row is this narrow. */
   .layout-bleed,
   .layout-panel,
   .layout-open {
@@ -657,24 +556,16 @@ button {
   }
 
   .chapter-media {
-    position: static;
-    transform: none;
     width: 100%;
-    justify-content: center;
+    max-width: 100%;
   }
 
-  .chapter-media--overflow .media-frame--desktop {
-    transform: none;
-  }
-
-  /* Every example carries an inline pixel width sized for desktop (up to
-     880px for Messaging's desktop screenshot) — more than twice a phone's
-     viewport, which rendered a cropped, unreadable fragment of the work.
-     `max-width` alone can't fix it: the stage is a content-sized grid, so
-     100% resolves against the oversized frame itself. Overriding the width
-     outright is what actually clamps it; the inline aspect-ratio survives,
-     so each example just scales down at its own shape. !important is the
-     only thing that beats the inline width. */
+  /* The box carries an inline 786px width for desktop — twice a phone's
+     viewport. max-width alone can't clamp it, because the stage is a
+     content-sized grid and 100% resolves against the oversized frame
+     itself; overriding the width outright is what works, and the inline
+     aspect-ratio survives so the box just scales down. !important is the
+     only thing that beats an inline width. */
   .layout-bleed .media-frame,
   .layout-panel .media-frame,
   .layout-open .media-frame {
@@ -909,11 +800,10 @@ button {
   max-width: 100%;
 }
 
-/* Both layers share the same grid cell, so the stage sizes itself to
-   whichever frame is larger instead of snapping to the entering item's
-   size — the exiting frame keeps its own dimensions instead of being
-   squeezed to fit the incoming item's box, which is what made the old
-   position:absolute/inset:0 version look distorted mid-fade. */
+/* Both layers occupy the same grid cell, so they sit exactly on top of one
+   another and the stage never changes size between examples — every example
+   is the same box now. Nothing moves; one simply fades up as the other fades
+   down, in place. */
 .media-layer {
   grid-area: 1 / 1;
   display: flex;
@@ -923,17 +813,7 @@ button {
   animation: media-fade 420ms ease forwards;
 }
 
-/* Taken out of the grid's sizing while it fades. Sharing the cell meant the
-   stage briefly grew to cover both examples at once, and since the media is
-   anchored to the viewport edge, that growth dragged the outgoing image
-   sideways before it faded — read as a lurch on the way in. Positioned
-   rather than inset:0, so it still shrink-wraps its own frame and can't be
-   squeezed into the incoming example's shape. */
 .media-layer--exit {
-  position: absolute;
-  right: 0;
-  top: 50%;
-  transform: translateY(-50%);
   animation-direction: reverse;
   pointer-events: none;
 }
@@ -1005,6 +885,10 @@ button {
   border: none;
   box-shadow: none;
   border-radius: 0;
+  /* No inset either — the padding exists for the placeholder label, and on a
+     real export it just held the artwork 32px short of the box it's meant to
+     fill. */
+  padding: 0;
 }
 
 .media-progress {

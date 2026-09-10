@@ -2,22 +2,19 @@ import type { CSSProperties } from "react";
 import ProjectMeta from "../ProjectMeta";
 import MediaGallery from "../MediaGallery";
 import { isLightColor } from "../../lib/color";
-import type { LayoutProps } from "./types";
+import { MEDIA_BOX, type LayoutProps } from "./types";
 
 /**
- * Messaging: dark, edge-to-edge, generous negative space. Copy is one
- * stacked column (pill, title, body) like Applicant experience — the media
- * is anchored to the right edge of the full viewport (not the text column),
- * and allowed to bleed further past it for examples flagged `overflow`. No
- * progress dots, same as the other two chapters.
+ * Messaging: dark, generous negative space. A stacked copy column beside the
+ * shared media box — the examples used to be anchored to the viewport edge
+ * and placed individually, but each asset now carries its own framing, so
+ * there's nothing left to position.
  *
  * Background color isn't set here — PortfolioShell's shared `.deck-background`
  * layer owns it so project-to-project color changes crossfade as one
  * continuous layer instead of two opaque panels cutting over each other.
  */
 export default function BleedLayout({ project, gallery, interactive }: LayoutProps) {
-  const current = project.media[gallery.index];
-
   return (
     <div
       className="layout layout-bleed"
@@ -39,10 +36,8 @@ export default function BleedLayout({ project, gallery, interactive }: LayoutPro
         {...gallery}
         interactive={interactive}
         hideProgress
-        style={current.edgeInset ? { right: current.edgeInset } : undefined}
-        className={`chapter-media ${current.overflow ? "chapter-media--overflow" : ""} ${
-          current.verticalAlign === "bottom" ? "chapter-media--bottom" : ""
-        }`}
+        frameSize={MEDIA_BOX}
+        className="chapter-media"
       />
     </div>
   );
