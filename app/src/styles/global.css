@@ -415,6 +415,14 @@ button {
   transform: translateY(-50%);
   display: flex;
   justify-content: flex-end;
+  /* Bleed layout (Messaging) swaps between differently-anchored examples
+     (vertically centered vs bottom-anchored, flush-edge vs inset) — without
+     this, the block snaps to its new anchor the instant the example
+     changes instead of gliding there alongside the crossfade. Harmless on
+     the other two layouts, which override position to static and never
+     change these properties. */
+  transition: top 420ms cubic-bezier(0.65, 0, 0.35, 1), right 420ms cubic-bezier(0.65, 0, 0.35, 1),
+    bottom 420ms cubic-bezier(0.65, 0, 0.35, 1), transform 420ms cubic-bezier(0.65, 0, 0.35, 1);
 }
 
 .chapter-media--overflow .media-frame--desktop {
@@ -957,7 +965,8 @@ button {
 @media (prefers-reduced-motion: reduce) {
   .layout-panel,
   .layout,
-  .deck-background {
+  .deck-background,
+  .chapter-media {
     transition-duration: 120ms !important;
   }
   .media-layer--exit,

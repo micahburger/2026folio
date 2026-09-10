@@ -17,12 +17,16 @@ import type { LayoutProps } from "./types";
  */
 export default function BleedLayout({ project, gallery, interactive }: LayoutProps) {
   const current = project.media[gallery.index];
+  // Reserve room for the widest example (not just the active one) so the
+  // text column's own max-width never resizes as examples swap — each
+  // example still keeps its own width/edge-bleed/vertical-anchor otherwise.
+  const reservedWidth = Math.max(...project.media.map((item) => item.width ?? 0));
 
   return (
     <div
       className="layout layout-bleed"
       data-theme={isLightColor(project.backgroundColor) ? "light" : "dark"}
-      style={{ color: project.textColor, "--media-w": `${current.width ?? 0}px` } as CSSProperties}
+      style={{ color: project.textColor, "--media-w": `${reservedWidth}px` } as CSSProperties}
     >
       <div className="chapter-inner">
         <div className="chapter-text">

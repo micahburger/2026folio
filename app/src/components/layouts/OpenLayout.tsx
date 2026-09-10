@@ -14,13 +14,16 @@ import type { LayoutProps } from "./types";
 // see the min-width:901px block in global.css): a 600px copy column, 125px
 // gap, 750px media column. Each example fills that width edge to edge up to
 // MEDIA_COLUMN_MAX_HEIGHT, then shrinks to fit the height and centers
-// horizontally instead (see MediaFrame's frameSize prop).
+// horizontally instead (see MediaFrame's frameSize prop). The examples
+// themselves render 15% smaller than the column (still centered within it)
+// — the column's own width/gap stay put.
 const MEDIA_COLUMN_WIDTH = 750;
 const MEDIA_COLUMN_MAX_HEIGHT = 720;
+const MEDIA_SCALE = 0.85;
 
 export default function OpenLayout({ project, gallery, interactive }: LayoutProps) {
   const current = project.media[gallery.index];
-  const frameSize = { width: MEDIA_COLUMN_WIDTH, height: MEDIA_COLUMN_MAX_HEIGHT };
+  const frameSize = { width: MEDIA_COLUMN_WIDTH * MEDIA_SCALE, height: MEDIA_COLUMN_MAX_HEIGHT * MEDIA_SCALE };
 
   return (
     <div
