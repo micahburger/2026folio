@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { MEDIA_AUTOPLAY_MS, MEDIA_TRANSITION_MS, prefersReducedMotion } from "../motion";
+import { MEDIA_AUTOPLAY_MS, MEDIA_LAYER_HOLD_MS, prefersReducedMotion } from "../motion";
 
 interface UseMediaGalleryOptions {
   count: number;
@@ -54,7 +54,7 @@ export function useMediaGallery({
       onIndexChange?.(normalized);
 
       if (clearTimer.current) clearTimeout(clearTimer.current);
-      clearTimer.current = setTimeout(() => setPreviousIndex(null), MEDIA_TRANSITION_MS);
+      clearTimer.current = setTimeout(() => setPreviousIndex(null), MEDIA_LAYER_HOLD_MS);
     },
     [count, onIndexChange]
   );

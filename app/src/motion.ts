@@ -23,10 +23,23 @@ export const DECK_COPY_SHIFT_PX = 16;
 export const DECK_TRANSITION_MS = DECK_COPY_IN_DELAY_MS + DECK_COPY_IN_MS; // 700ms
 
 // Within-project media gallery transition.
+//
+// Two variants, both defined in global.css (CSS can't read these):
+//   - base: a 420ms opacity crossfade. Phones, touch, reduced motion.
+//   - desktop: the same crossfade plus a small counter-drift and scale, 700ms
+//     on cubic-bezier(0.22, 1, 0.36, 1). Gated on a pointer that can hover,
+//     so tablets stay on the base one.
 export const MEDIA_TRANSITION_MS = 420;
-export const MEDIA_EASING = "cubic-bezier(0.65, 0, 0.35, 1)"; // restrained ease, no overshoot
-export const MEDIA_LATERAL_OFFSET_PX = 32; // within the 24-40px range requested
-export const MEDIA_SCALE_FROM = 0.985;
+export const MEDIA_TRANSITION_DESKTOP_MS = 700;
+/**
+ * How long the outgoing layer stays mounted. It has to outlast the SLOWEST
+ * variant, since the markup can't tell which one CSS picked — at the base
+ * 420ms the desktop fade was being cut off partway and the old screenshot
+ * vanished mid-drift. Holding the longer duration everywhere only means the
+ * base variant keeps an already fully-transparent layer around a little
+ * longer, which costs nothing.
+ */
+export const MEDIA_LAYER_HOLD_MS = Math.max(MEDIA_TRANSITION_MS, MEDIA_TRANSITION_DESKTOP_MS);
 export const MEDIA_AUTOPLAY_MS = 4200; // dwell time before auto-advancing
 
 // Overview <-> project FLIP zoom.
