@@ -417,6 +417,9 @@ button {
   );
 }
 
+/* Deliberately not transitioned. Animating the anchor properties made each
+   example slide and jitter into place on top of the crossfade; the examples
+   just cut to their positions while the images fade. */
 .chapter-media {
   position: absolute;
   right: var(--chapter-media-inset, 0px);
@@ -424,14 +427,6 @@ button {
   transform: translateY(-50%);
   display: flex;
   justify-content: flex-end;
-  /* Bleed layout (Messaging) swaps between differently-anchored examples
-     (vertically centered vs bottom-anchored, flush-edge vs inset) — without
-     this, the block snaps to its new anchor the instant the example
-     changes instead of gliding there alongside the crossfade. Harmless on
-     the other two layouts, which override position to static and never
-     change these properties. */
-  transition: top 420ms cubic-bezier(0.65, 0, 0.35, 1), right 420ms cubic-bezier(0.65, 0, 0.35, 1),
-    bottom 420ms cubic-bezier(0.65, 0, 0.35, 1), transform 420ms cubic-bezier(0.65, 0, 0.35, 1);
 }
 
 .chapter-media--overflow .media-frame--desktop {
@@ -452,6 +447,38 @@ button {
   align-items: center;
   padding: var(--page-margin-top) var(--page-margin) var(--page-margin) var(--page-margin-left);
   --chapter-media-inset: 0px;
+}
+
+/* Copy column matched to the other two chapters: a 600px target that gives
+   ground proportionally as the viewport narrows, rather than the old clamp
+   that bottomed out at 320px and stayed there — which read as cramped next
+   to them, and at 1280px let the copy run 60px underneath the artwork.
+
+   The media here is anchored to the viewport edge rather than sharing a
+   flex row, so it can't shrink by flex the way the other chapters' does;
+   capping it against the space the copy leaves is the equivalent. Each
+   example keeps its own anchor — edge-flush, bottom, or inset — and only
+   scales once there isn't room for it at full size. */
+@media (min-width: 901px) {
+  .layout-bleed {
+    --copy-w: min(
+      600px,
+      calc((100vw - var(--page-margin-left) - var(--page-margin)) * 0.42)
+    );
+  }
+
+  .layout-bleed .chapter-inner {
+    width: var(--copy-w);
+    max-width: var(--copy-w);
+    flex: 0 1 auto;
+    min-width: 0;
+  }
+
+  .layout-bleed .chapter-media {
+    max-width: calc(
+      100vw - var(--page-margin-left) - var(--copy-w) - clamp(48px, 8vw, 125px)
+    );
+  }
 }
 
 /* ================= layout: panel (Applicant experience) ================= */
@@ -893,7 +920,17 @@ button {
   animation: media-fade 420ms ease forwards;
 }
 
+/* Taken out of the grid's sizing while it fades. Sharing the cell meant the
+   stage briefly grew to cover both examples at once, and since the media is
+   anchored to the viewport edge, that growth dragged the outgoing image
+   sideways before it faded — read as a lurch on the way in. Positioned
+   rather than inset:0, so it still shrink-wraps its own frame and can't be
+   squeezed into the incoming example's shape. */
 .media-layer--exit {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
   animation-direction: reverse;
   pointer-events: none;
 }
@@ -1046,8 +1083,7 @@ button {
 @media (prefers-reduced-motion: reduce) {
   .layout-panel,
   .layout,
-  .deck-background,
-  .chapter-media {
+  .deck-background {
     transition-duration: 120ms !important;
   }
   .media-layer--exit,
