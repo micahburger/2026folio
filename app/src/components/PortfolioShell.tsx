@@ -53,6 +53,7 @@ export default function PortfolioShell({ projects }: PortfolioShellProps) {
   } | null>(null);
   const [mediaIndexByProject, setMediaIndexByProject] = useState<Record<string, number>>({});
 
+  const shellRef = useRef<HTMLDivElement | null>(null);
   const frameRefs = useRef<Array<HTMLDivElement | null>>([]);
   const projectViewRefs = useRef<Array<HTMLDivElement | null>>([]);
   // Only the overview-opening zoom is staged this way now; closing runs its
@@ -193,9 +194,48 @@ export default function PortfolioShell({ projects }: PortfolioShellProps) {
       .catch(() => {});
   }
 
+  /**
+   * Parks the overview's scroll on a given project's card, centred in the
+   * viewport. Has to run before anything measures the grid: the zoom animates
+   * toward wherever the card currently sits on screen, so scrolling after it
+   * was measured would aim it at a position the card has since left.
+   */
+  function centerCellInOverview(index: number) {
+    const shell = shellRef.current;
+    const cell = frameRefs.current[index];
+    if (!shell || !cell) return;
+
+    // Which element actually scrolls depends on the breakpoint: on desktop
+    // the shell is a fixed-height scroll container, while on mobile it grows
+    // to fit its content and the document scrolls instead. Both start at the
+    // top of the viewport, so the arithmetic below is the same either way.
+    const scroller: HTMLElement =
+      shell.scrollHeight > shell.clientHeight
+        ? shell
+        : (document.scrollingElement as HTMLElement | null) ?? document.documentElement;
+
+    const viewportHeight = scroller === shell ? shell.clientHeight : window.innerHeight;
+    const cellBox = cell.getBoundingClientRect();
+    const centred =
+      cellBox.top + scroller.scrollTop - (viewportHeight - cellBox.height) / 2;
+
+    scroller.scrollTop = Math.max(
+      0,
+      Math.min(centred, scroller.scrollHeight - viewportHeight)
+    );
+  }
+
   useLayoutEffect(() => {
     const flip = pendingFlip.current;
     pendingFlip.current = null;
+
+    // Opening the gallery used to drop the visitor at the top of it however
+    // deep into the deck they were, losing their place. Centring the project
+    // they came from means the zoom settles onto its card and they can scroll
+    // out from there. Also covers arriving by browser back, which carries no
+    // pending flip.
+    if (viewMode === "overview") centerCellInOverview(activeProject);
+
     // A plain project-to-project step never sets a pending flip — the deck
     // transition above handles that motion entirely on its own.
     if (!flip) return;
@@ -304,7 +344,7 @@ export default function PortfolioShell({ projects }: PortfolioShellProps) {
         : "#F5F4F1";
 
   return (
-    <div className={`shell ${viewMode === "overview" ? "shell--overview" : ""}`}>
+    <div ref={shellRef} className={`shell ${viewMode === "overview" ? "shell--overview" : ""}`}>
       <header
         className="shell-header"
         style={
