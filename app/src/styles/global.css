@@ -16,6 +16,23 @@
   --page-margin-top: 130px;
   --page-margin-mobile: 28px;
   --page-margin-top-mobile: 96px;
+
+  /* Custom cursor — see .custom-cursor. The resting dot is white drawn with
+     a difference blend, so it inverts whatever is under it and reads on
+     both the light and dark chapters. Over anything clickable it drops the
+     blend and paints the active color as-is. */
+  --cursor-size: 16px;
+  --cursor-color: #ffffff;
+  --cursor-color-active: #ff5a36;
+
+  /* Hover grow — the one hover response for anything clickable that should
+     answer with movement (see "hover grow" below). Timing is shared; scale is
+     per size of thing, since the same percentage reads far bigger on a large
+     card than on a small pill. */
+  --hover-grow-scale-button: 1.12;
+  --hover-grow-scale-card: 1.05;
+  --hover-grow-duration: 320ms;
+  --hover-grow-easing: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 * {
@@ -113,7 +130,8 @@ button {
   padding: 10px 22px;
   border-radius: 999px;
   font: inherit;
-  transition: background-color 400ms ease, color 400ms ease, opacity 200ms ease;
+  transition: background-color 400ms ease, color 400ms ease, opacity 200ms ease,
+    scale var(--hover-grow-duration) var(--hover-grow-easing);
 }
 
 /* The pill renders ~30px tall. Rather than grow it, an invisible overlay
@@ -126,6 +144,66 @@ button {
 
 .shell-menu-button:hover {
   opacity: 0.85;
+}
+
+/* ---- hover grow ---------------------------------------------------------
+   The shared hover response (tokens in :root). Every element that uses it is
+   listed here with its scale token and carries the matching `scale`
+   transition itself.
+
+   It uses the standalone `scale` property rather than transform so it never
+   fights an element's own transform. Scale takes no part in layout, so
+   nothing around a grown element shifts. Hover-capable pointers only — on
+   touch, :hover sticks after a tap and would leave things swollen.
+
+   Overview cards drop out while a zoom is in flight (data-zooming on the
+   shell, set by PortfolioShell): a scaled card becomes the containing block
+   for the zoom's position:fixed escape, which would trap the zoom inside the
+   card. The zoom measures the card as grown, so dropping the scale under it
+   doesn't show. */
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .shell-menu-button:hover {
+    scale: var(--hover-grow-scale-button);
+  }
+
+  .shell:not([data-zooming]) .overview-frame--overview:hover {
+    scale: var(--hover-grow-scale-card);
+  }
+}
+
+/* ================= custom cursor ================= */
+
+.has-custom-cursor,
+.has-custom-cursor * {
+  cursor: none !important;
+}
+
+.custom-cursor {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 2147483647;
+  width: var(--cursor-size);
+  height: var(--cursor-size);
+  /* Centred on the pointer's hotspot without touching transform, which
+     CustomCursor owns for positioning. */
+  margin: calc(var(--cursor-size) / -2) 0 0 calc(var(--cursor-size) / -2);
+  border-radius: 50%;
+  background: var(--cursor-color);
+  mix-blend-mode: difference;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 200ms ease, background-color 200ms ease;
+  will-change: transform;
+}
+
+.custom-cursor.is-visible {
+  opacity: 1;
+}
+
+.custom-cursor.is-active {
+  background: var(--cursor-color-active);
+  mix-blend-mode: normal;
 }
 
 .shell-rail {
@@ -175,6 +253,12 @@ button {
   /* Full size containment (not just inline-size) so cqh below has something
      to resolve against — needed for the cover-style scale on the child. */
   container-type: size;
+  transition: scale var(--hover-grow-duration) var(--hover-grow-easing);
+}
+
+/* Snap, don't ease, out of a hover grow when a zoom starts — see hover grow. */
+.shell[data-zooming] .overview-frame--overview {
+  transition: none;
 }
 
 /* ================= project view ================= */

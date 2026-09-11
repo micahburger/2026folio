@@ -155,6 +155,33 @@ export default function PortfolioShell({ projects }: PortfolioShellProps) {
     return { top: r.top, left: r.left, width: r.width, height: r.height };
   }
 
+  /**
+   * Switches the overview cards' hover grow off until the returned release is
+   * called. A grown card is a scaled ancestor of the zooming element, which
+   * makes it the containing block for the zoom's position:fixed escape — the
+   * zoom would play clipped inside the card. Set via a data attribute rather
+   * than className, which React rewrites whenever viewMode changes. Each hold
+   * is token-guarded, so a release from a zoom that a newer one interrupted
+   * can't lift the newer one's hold.
+   *
+   * The forced layout after setting it is load-bearing. If the card loses its
+   * scale in the same style pass that the zoom turns position:fixed on, Chrome
+   * still paints the fixed element against the card — offset below it and
+   * clipped away by the card's overflow, so the card went blank and the zoom
+   * played invisibly. Layout reports the right box either way; only hit
+   * testing and paint show it. Flushing here settles the card first, inside
+   * the same frame, so nothing visibly changes.
+   */
+  const zoomHoldToken = useRef(0);
+  function holdHoverGrow() {
+    const token = ++zoomHoldToken.current;
+    shellRef.current?.setAttribute("data-zooming", "");
+    void shellRef.current?.offsetWidth;
+    return () => {
+      if (zoomHoldToken.current === token) shellRef.current?.removeAttribute("data-zooming");
+    };
+  }
+
   function openOverview() {
     // Measure the active project fullscreen, before the grid layout exists.
     const rect = rectOf(projectViewRefs.current[activeProject]);
@@ -170,7 +197,9 @@ export default function PortfolioShell({ projects }: PortfolioShellProps) {
 
   function closeOverview(targetIndex: number) {
     const el = projectViewRefs.current[targetIndex];
-    // The target's grid cell, measured while the overview grid still exists.
+    // The target's grid cell, measured while the overview grid still exists —
+    // and before the hover grow is released, so a hovered card is measured at
+    // the size it's showing and the zoom picks up from exactly there.
     const rect = rectOf(frameRefs.current[targetIndex]);
 
     if (!el || !rect || prefersReducedMotion()) {
@@ -182,6 +211,7 @@ export default function PortfolioShell({ projects }: PortfolioShellProps) {
     // landed. Switching first re-laid the whole rail out instantly — the grid
     // collapsed and the project's background covered everything before the
     // zoom had played, so the cell never looked like it travelled anywhere.
+    const releaseHover = holdHoverGrow();
     const zoom = zoomCellToFullscreen(el, rect, pageColorFor(projects[targetIndex]));
     zoom.finished
       .then(() => {
@@ -194,10 +224,11 @@ export default function PortfolioShell({ projects }: PortfolioShellProps) {
         // snapped back to the card and out again, one frame, every time.
         flushSync(() => commitToProject(targetIndex));
         resetFlip(el);
+        releaseHover();
       })
       // A rejection just means a newer pick interrupted this one, and that
       // transition owns the cleanup instead.
-      .catch(() => {});
+      .catch(releaseHover);
   }
 
   /**
@@ -255,7 +286,16 @@ export default function PortfolioShell({ projects }: PortfolioShellProps) {
 
       if (i === flip.index) {
         if (reduced) fadeIn(el, 150);
-        else zoomToOverview(el, cell, flip.rect, pageColorFor(projects[i]));
+        else {
+          // The pointer is often already resting over a card as the gallery
+          // opens. Held until the zoom lands; zoomToOverview's own cleanup
+          // was queued first, so the escape is gone before the card can grow.
+          const releaseHover = holdHoverGrow();
+          zoomToOverview(el, cell, flip.rect, pageColorFor(projects[i])).finished.then(
+            releaseHover,
+            releaseHover
+          );
+        }
       } else if (viewMode === "overview") {
         fadeIn(el, reduced ? 150 : 300);
       } else {
