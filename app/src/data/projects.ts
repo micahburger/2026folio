@@ -6,6 +6,9 @@ import messagingDetail from "../assets/messaging/detail.png";
 import applicantList from "../assets/applicant-experience/applications-list.png";
 import applicantChecklist from "../assets/applicant-experience/checklist.png";
 import applicantPetForm from "../assets/applicant-experience/pet-form.png";
+import requestInvite from "../assets/requesting-an-application/invite.png";
+import requestWhatsIncluded from "../assets/requesting-an-application/whats-included.png";
+import requestApplications from "../assets/requesting-an-application/applications.png";
 import assistantWelcome from "../assets/ai-assistant/welcome.png";
 import assistantConversation from "../assets/ai-assistant/conversation.png";
 import assistantAddressSearch from "../assets/ai-assistant/address-search.png";
@@ -17,55 +20,18 @@ import codeAndTheoryLogo from "../assets/workhistory/code-and-theory.png";
 import profilePhoto from "../assets/workhistory/profile.jpg";
 
 /**
- * Panel colors are eyeballed from the shared design screenshots, not exact
- * hex values from Figma — swap for real tokens once available.
+ * Order here is the deck order, and the resume stays last.
  *
- * The third example for Applicant Experience and AI Assistant has no real
- * asset yet: the "3.png" provided for both looked like it belongs to a
- * different product (a meeting-notes / video-call screen, not RentSpree) —
- * left as a placeholder rather than shipping a mismatched image.
+ * Every example across every project is exported onto the same 786px-wide
+ * canvas (at 2x) with its own framing and background composed in, which is
+ * why each one carries the identical width/height — see MEDIA_BOX in
+ * components/layouts/types.ts.
+ *
+ * `headline` and `disciplines` are required by the type but nothing renders
+ * either one right now: the headline pill above each title was removed, and
+ * .project-disciplines is display:none.
  */
 export const projects: Project[] = [
-  {
-    id: "messaging",
-    slug: "messaging",
-    title: "Messaging",
-    disciplines: ["Platform design", "Responsive systems", "Cross-product architecture"],
-    headline: "Turning messaging into part of the rental workflow",
-    body: [
-      "RentSpree connects agents, landlords, and applicants, but the conversation lived in personal texts and email, disconnected from the property and application.",
-      "I designed the messaging platform around that missing context: a responsive three-column hub where every conversation is tied to a property, its participants, and application activity. The foundation was built to support future milestones, templates, notifications, and automated workflows without redesigning the core experience.",
-    ],
-    backgroundColor: "#222222",
-    textColor: "#F5F4F1",
-    layout: "bleed",
-    media: [
-      {
-        id: "messaging-list",
-        label: "Messages list",
-        treatment: "card",
-        src: messagingList,
-        width: 786,
-        height: 762,
-      },
-      {
-        id: "messaging-conversation",
-        label: "Conversation hub (desktop)",
-        treatment: "desktop",
-        src: messagingConversation,
-        width: 786,
-        height: 762,
-      },
-      {
-        id: "messaging-detail",
-        label: "Messages (mobile)",
-        treatment: "phone",
-        src: messagingDetail,
-        width: 786,
-        height: 762,
-      },
-    ],
-  },
   {
     id: "applicant-experience",
     slug: "applicant-experience",
@@ -101,6 +67,87 @@ export const projects: Project[] = [
         label: "Household details — pets",
         treatment: "card",
         src: applicantPetForm,
+        width: 786,
+        height: 762,
+      },
+    ],
+  },
+  {
+    id: "requesting-an-application",
+    slug: "requesting-an-application",
+    title: "Requesting an application",
+    disciplines: [],
+    headline: "",
+    body: [
+      "Agents often send the same screening package again and again, but the old flow made them repeat the same multi-step setup every time.",
+      "I collapsed the common path to a few taps: choose the property, invite renters, done. The package stays preselected across properties, while deeper controls sit one tap behind \u201cWhat\u2019s included\u201d for agents who need to customize or stage reports over time.",
+      "Once requests are out, the applications view makes progress easy to scan, with clear states for each applicant and grouped households for co-applicants and guarantors.",
+    ],
+    backgroundColor: "#F2E6FB",
+    textColor: "#141414",
+    layout: "open",
+    media: [
+      {
+        id: "request-invite",
+        label: "Invite your first applicant",
+        treatment: "card",
+        src: requestInvite,
+        width: 786,
+        height: 762,
+      },
+      {
+        id: "request-whats-included",
+        label: "What\u2019s included \u2014 application package",
+        treatment: "card",
+        src: requestWhatsIncluded,
+        width: 786,
+        height: 762,
+      },
+      {
+        id: "request-applications",
+        label: "Applications in progress",
+        treatment: "card",
+        src: requestApplications,
+        width: 786,
+        height: 762,
+      },
+    ],
+  },
+  {
+    id: "messaging",
+    slug: "messaging",
+    title: "Messaging",
+    disciplines: ["Platform design", "Responsive systems", "Cross-product architecture"],
+    headline: "Turning messaging into part of the rental workflow",
+    body: [
+      "RentSpree connects agents, landlords, and applicants, but the conversation lived in personal texts and email, disconnected from the property and application.",
+      "I designed the messaging platform around that missing context: a responsive three-column hub where every conversation is tied to a property, its participants, and application activity. The foundation was built to support future milestones, templates, notifications, and automated workflows without redesigning the core experience.",
+    ],
+    backgroundColor: "#222222",
+    textColor: "#F5F4F1",
+    layout: "bleed",
+    media: [
+      {
+        id: "messaging-list",
+        label: "Messages list",
+        treatment: "card",
+        src: messagingList,
+        width: 786,
+        height: 762,
+      },
+      {
+        id: "messaging-conversation",
+        label: "Conversation hub (desktop)",
+        treatment: "desktop",
+        src: messagingConversation,
+        width: 786,
+        height: 762,
+      },
+      {
+        id: "messaging-detail",
+        label: "Messages (mobile)",
+        treatment: "phone",
+        src: messagingDetail,
         width: 786,
         height: 762,
       },
