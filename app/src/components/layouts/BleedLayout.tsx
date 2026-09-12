@@ -35,7 +35,6 @@ export default function BleedLayout({ project, gallery, interactive }: LayoutPro
         media={project.media}
         {...gallery}
         interactive={interactive}
-        hideProgress
         frameSize={MEDIA_BOX}
         className="chapter-media"
       />

@@ -25,6 +25,14 @@
   --cursor-color: #ffffff;
   --cursor-color-active: #ff5a36;
 
+  /* Gallery dots. A dot is too small to answer a hover by growing — 12% of
+     8px is invisible — so it brightens instead. Dark chapters override these
+     three on their own root (see [data-theme="dark"] below). */
+  --dot-color: rgba(20, 20, 20, 0.2);
+  --dot-color-hover: rgba(20, 20, 20, 0.45);
+  --dot-color-active: currentColor;
+  --dot-active-opacity: 0.9;
+
   /* Hover grow — the one hover response for anything clickable that should
      answer with movement (see "hover grow" below). Timing is shared; scale is
      per size of thing, since the same percentage reads far bigger on a large
@@ -922,7 +930,7 @@ button {
   align-items: center;
   justify-content: center;
   min-width: 0;
-  animation: media-fade 420ms ease forwards;
+  animation: media-fade 800ms ease forwards;
 }
 
 .media-layer--exit {
@@ -930,80 +938,22 @@ button {
   pointer-events: none;
 }
 
+/* Opacity only — one plain crossfade everywhere, no drift or scale.
+   The 55% stop is what keeps the two layers overlapping rather than dipping:
+   two stacked layers both sitting at half opacity let a quarter of the page
+   bleed through between them, which reads as a dim blink mid-swap. The
+   incoming layer reaches full a little past halfway, and since the exit
+   plays these same frames in reverse, the outgoing one mirrors it and holds
+   opaque until a little before that — so their overlap never thins. */
 @keyframes media-fade {
   from {
     opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-/* ---- desktop: the same crossfade, with a little depth ----------------- */
-/* The base fade above is untouched and stays the fallback. This adds a small
-   counter-drift and scale so the outgoing screenshot settles back and away
-   while the incoming one arrives — enough to register as deliberate, not
-   enough to pull attention off the UI being shown.
-
-   Gated on a hoverable fine pointer as well as width, so a tablet held in
-   landscape keeps the simple version, and on no-preference so reduced motion
-   falls through to the plain fade rather than a faster version of this.
-
-   The two directions are separate keyframes rather than one played in
-   reverse (which is how the base fade gets its exit): reversing would mirror
-   the entrance, sending the outgoing image the way the incoming one came
-   from. They travel the same way instead, which is what reads as one
-   movement rather than two.
-
-   Only opacity and transform animate. Both layers already share a single
-   grid cell, so nothing here can shift the frame or reflow the page. */
-@media (min-width: 901px) and (hover: hover) and (pointer: fine) and
-  (prefers-reduced-motion: no-preference) {
-  .media-layer--enter {
-    animation: media-enter-desktop 950ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
-  }
-
-  /* The shorthand resets animation-direction, undoing the base rule's
-     reverse — this plays its own keyframes forward. */
-  .media-layer--exit {
-    animation: media-exit-desktop 950ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
-  }
-}
-
-/* The mid-animation opacity stops are what keep the two layers overlapping
-   rather than dipping. Stacked layers both sitting at half opacity let a
-   quarter of the page bleed through between them, which reads as a dim blink
-   in the middle of the swap. Holding the outgoing image opaque through the
-   first third and bringing the incoming one to full a little past halfway
-   keeps that bleed under a few percent, while transform still interpolates
-   across the entire 950ms — omitting transform from those middle stops is
-   deliberate, since each property interpolates between the keyframes that
-   mention it, so the drift never pauses. */
-@keyframes media-enter-desktop {
-  from {
-    opacity: 0;
-    transform: translateX(18px) scale(1.018);
   }
   55% {
     opacity: 1;
   }
   to {
     opacity: 1;
-    transform: translateX(0) scale(1);
-  }
-}
-
-@keyframes media-exit-desktop {
-  from {
-    opacity: 1;
-    transform: translateX(0) scale(1);
-  }
-  30% {
-    opacity: 1;
-  }
-  to {
-    opacity: 0;
-    transform: translateX(-12px) scale(0.985);
   }
 }
 
@@ -1073,31 +1023,48 @@ button {
 
 .media-progress {
   display: flex;
-  gap: 8px;
+  gap: 12px;
 }
 
 .media-progress-mark {
-  width: 20px;
-  height: 3px;
-  background: rgba(20, 20, 20, 0.2);
+  position: relative;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--dot-color);
   transition: background-color 250ms ease;
 }
 
+/* Only the clickable ones (overview previews render inert spans), and not the
+   current dot, which is already at full strength — without the :not() this
+   would win on specificity and dim it on hover. */
+button.media-progress-mark:hover:not(.is-active) {
+  background: var(--dot-color-hover);
+}
+
+/* The dot itself is well under any sensible touch target, so an invisible
+   overlay brings it to 32px (the 12px gap keeps neighbouring targets from
+   overlapping) while the dot keeps its size. */
+.media-progress-mark::after {
+  content: "";
+  position: absolute;
+  inset: -12px;
+}
+
 .media-progress-mark.is-active {
-  background: currentColor;
-  opacity: 0.9;
+  background: var(--dot-color-active);
+  opacity: var(--dot-active-opacity);
 }
 
 /* Any chapter can carry a `data-theme="dark"` chapter root (each layout
    computes this from its own background via lib/color's isLightColor) — the
-   defaults above assume a light chapter, so dark ones get inverted marks. */
-[data-theme="dark"] .media-progress-mark {
-  background: rgba(245, 244, 241, 0.3);
-}
-
-[data-theme="dark"] .media-progress-mark.is-active {
-  background: #6c87e8;
-  opacity: 1;
+   tokens in :root assume a light chapter, so dark ones re-point them here and
+   every dot rule above follows. */
+[data-theme="dark"] {
+  --dot-color: rgba(245, 244, 241, 0.3);
+  --dot-color-hover: rgba(245, 244, 241, 0.6);
+  --dot-color-active: #6c87e8;
+  --dot-active-opacity: 1;
 }
 
 /* ================= ultrawide guard ================= */

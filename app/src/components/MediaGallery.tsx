@@ -21,8 +21,6 @@ interface MediaGalleryProps extends MediaGalleryState {
   /** False while shown as a non-active overview preview — the whole preview
    * is one click target then, so the gallery must not intercept it. */
   interactive?: boolean;
-  /** Suppresses the built-in progress dots — set when a layout renders its own. */
-  hideProgress?: boolean;
   /** Fixed box every example renders inside of (see MediaFrame) — omitted by
    * bleed layout (Messaging), which keeps each example at its own size. */
   frameSize?: { width: number; height?: number };
@@ -41,7 +39,6 @@ export default function MediaGallery({
   className = "",
   style,
   interactive = true,
-  hideProgress = false,
   frameSize,
 }: MediaGalleryProps) {
   const touchStartX = useRef<number | null>(null);
@@ -114,29 +111,28 @@ export default function MediaGallery({
         </div>
       </div>
 
-      {!hideProgress && (
-        <div className="media-progress" role={interactive ? "tablist" : undefined} aria-label="UI examples">
-          {media.map((item, i) =>
-            interactive ? (
-              <button
-                key={item.id}
-                role="tab"
-                aria-selected={i === index}
-                className={`media-progress-mark ${i === index ? "is-active" : ""}`}
-                onClick={(event) => {
-                  event.stopPropagation();
-                  goTo(i);
-                }}
-              />
-            ) : (
-              <span
-                key={item.id}
-                className={`media-progress-mark ${i === index ? "is-active" : ""}`}
-              />
-            )
-          )}
-        </div>
-      )}
+      <div className="media-progress" role={interactive ? "tablist" : undefined} aria-label="UI examples">
+        {media.map((item, i) =>
+          interactive ? (
+            <button
+              key={item.id}
+              role="tab"
+              aria-selected={i === index}
+              aria-label={`Show UI example ${i + 1}: ${item.label}`}
+              className={`media-progress-mark ${i === index ? "is-active" : ""}`}
+              onClick={(event) => {
+                event.stopPropagation();
+                goTo(i);
+              }}
+            />
+          ) : (
+            <span
+              key={item.id}
+              className={`media-progress-mark ${i === index ? "is-active" : ""}`}
+            />
+          )
+        )}
+      </div>
     </div>
   );
 }

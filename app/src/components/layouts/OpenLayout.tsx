@@ -7,7 +7,8 @@ import { MEDIA_BOX, type LayoutProps } from "./types";
 /**
  * Rental Assistant: white, contained (not edge-bled like Messaging). Same
  * stacked copy column as Applicant experience / Messaging — pill, title,
- * body — beside the shared media box. No progress dots, same as Applicant experience.
+ * body — beside the shared media box, with the gallery's own progress dots
+ * under it.
  */
 export default function OpenLayout({ project, gallery, interactive }: LayoutProps) {
 
@@ -31,7 +32,6 @@ export default function OpenLayout({ project, gallery, interactive }: LayoutProp
         media={project.media}
         {...gallery}
         interactive={interactive}
-        hideProgress
         frameSize={MEDIA_BOX}
         className="chapter-media"
       />

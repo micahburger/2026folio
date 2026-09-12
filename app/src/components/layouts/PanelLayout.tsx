@@ -9,8 +9,8 @@ import { MEDIA_BOX, type LayoutProps } from "./types";
  * inset from the viewport edges so the white page shows around it. Color
  * shifts per active example (olive / orange), matching the source design.
  * Copy is one stacked column (title, body) so it holds its position
- * while only the media column swaps between examples on an autoplay fade —
- * no manual progress indicator for now.
+ * while only the media column swaps between examples on an autoplay fade,
+ * with the gallery's own progress dots under the media.
  */
 export default function PanelLayout({ project, gallery, interactive }: LayoutProps) {
   const current = project.media[gallery.index];
@@ -38,7 +38,6 @@ export default function PanelLayout({ project, gallery, interactive }: LayoutPro
           media={project.media}
           {...gallery}
           interactive={interactive}
-          hideProgress
           frameSize={MEDIA_BOX}
           className="chapter-media"
         />
