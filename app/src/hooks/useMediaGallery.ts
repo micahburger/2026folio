@@ -1,5 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { MEDIA_AUTOPLAY_MS, MEDIA_LAYER_HOLD_MS, prefersReducedMotion } from "../motion";
+import { MEDIA_AUTOPLAY_MS, mediaLayerHoldMs, prefersReducedMotion } from "../motion";
+
+/** Who asked for the change — the autoplay timer, or the visitor. Decides how
+ * fast the crossfade runs (see motion.ts). */
+export type MediaChangeSource = "auto" | "manual";
 
 interface UseMediaGalleryOptions {
   count: number;
@@ -21,6 +25,7 @@ export function useMediaGallery({
   const indexRef = useRef(initialIndex);
   const [previousIndex, setPreviousIndex] = useState<number | null>(null);
   const [direction, setDirection] = useState<1 | -1>(1);
+  const [source, setSource] = useState<MediaChangeSource>("auto");
   const clearTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -42,19 +47,23 @@ export function useMediaGallery({
   }, [isActive]);
 
   const goTo = useCallback(
-    (nextIndex: number) => {
+    (nextIndex: number, changeSource: MediaChangeSource = "manual") => {
       const current = indexRef.current;
       const normalized = ((nextIndex % count) + count) % count;
       if (normalized === current) return;
 
       setDirection(normalized > current || (current === count - 1 && normalized === 0) ? 1 : -1);
+      setSource(changeSource);
       setPreviousIndex(current);
       setIndexState(normalized);
       indexRef.current = normalized;
       onIndexChange?.(normalized);
 
       if (clearTimer.current) clearTimeout(clearTimer.current);
-      clearTimer.current = setTimeout(() => setPreviousIndex(null), MEDIA_LAYER_HOLD_MS);
+      clearTimer.current = setTimeout(
+        () => setPreviousIndex(null),
+        mediaLayerHoldMs(changeSource)
+      );
     },
     [count, onIndexChange]
   );
@@ -67,7 +76,7 @@ export function useMediaGallery({
   // gets immediately followed by an auto-advance.
   useEffect(() => {
     if (!autoplay || count <= 1 || prefersReducedMotion()) return;
-    const id = setTimeout(() => goTo(indexRef.current + 1), MEDIA_AUTOPLAY_MS);
+    const id = setTimeout(() => goTo(indexRef.current + 1, "auto"), MEDIA_AUTOPLAY_MS);
     return () => clearTimeout(id);
   }, [autoplay, count, goTo, index]);
 
@@ -81,6 +90,7 @@ export function useMediaGallery({
     index,
     previousIndex,
     direction,
+    source,
     goNext,
     goPrev,
     goTo,

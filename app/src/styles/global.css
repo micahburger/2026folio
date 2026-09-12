@@ -347,12 +347,15 @@ button {
 .project-view.is-leaving .project-meta {
   animation: deck-copy-exit 320ms cubic-bezier(0.65, 0, 0.35, 1) 120ms both;
 }
+/* Arrivals use the ease-out curve (motion.ts DECK_ENTER_EASING), not the
+   in-out the exits run on: an entrance that starts slow holds still through
+   the moment the visitor is watching for it. */
 .project-view.is-entering .media-gallery {
-  animation: deck-media-enter 380ms cubic-bezier(0.65, 0, 0.35, 1) 160ms both;
+  animation: deck-media-enter 380ms cubic-bezier(0.23, 1, 0.32, 1) 160ms both;
 }
 .project-view.is-entering .project-copy,
 .project-view.is-entering .project-meta {
-  animation: deck-copy-enter 380ms cubic-bezier(0.65, 0, 0.35, 1) 320ms both;
+  animation: deck-copy-enter 380ms cubic-bezier(0.23, 1, 0.32, 1) 320ms both;
 }
 
 @keyframes deck-media-exit {
@@ -909,6 +912,11 @@ button {
 }
 
 .media-stage {
+  /* Crossfade speed, set per swap by MediaGallery's data-fade (kept in sync
+     with motion.ts MEDIA_FADE_*). An autoplay drift is the pace of the page;
+     a swap the visitor asked for is a response to their click and snaps. The
+     variable is read once when each layer's animation starts, not per frame. */
+  --media-fade-ms: 800ms;
   position: relative;
   cursor: pointer;
   display: grid;
@@ -918,6 +926,10 @@ button {
      frame's own max-width can finally resolve against a real width. */
   grid-template-columns: minmax(0, 1fr);
   max-width: 100%;
+}
+
+.media-stage[data-fade="manual"] {
+  --media-fade-ms: 250ms;
 }
 
 /* Both layers occupy the same grid cell, so they sit exactly on top of one
@@ -930,7 +942,7 @@ button {
   align-items: center;
   justify-content: center;
   min-width: 0;
-  animation: media-fade 800ms ease forwards;
+  animation: media-fade var(--media-fade-ms, 800ms) ease forwards;
 }
 
 .media-layer--exit {
@@ -1086,9 +1098,12 @@ button.media-progress-mark:hover:not(.is-active) {
   .deck-background {
     transition-duration: 120ms !important;
   }
-  .media-layer--exit,
-  .media-layer--enter {
-    animation-duration: 120ms !important;
+  /* Setting the variable rather than animation-duration keeps this in one
+     place, and matches motion.ts MEDIA_FADE_REDUCED_MS — which is what the
+     JS uses to decide how long to hold the outgoing layer. */
+  .media-stage,
+  .media-stage[data-fade="manual"] {
+    --media-fade-ms: 120ms;
   }
   .project-view.is-leaving .media-gallery,
   .project-view.is-leaving .project-copy,

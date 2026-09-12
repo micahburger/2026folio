@@ -1,11 +1,13 @@
 import { useRef, type CSSProperties } from "react";
 import type { ProjectMediaItem } from "../data/types";
+import type { MediaChangeSource } from "../hooks/useMediaGallery";
 import MediaFrame from "./MediaFrame";
 
 export interface MediaGalleryState {
   index: number;
   previousIndex: number | null;
   direction: 1 | -1;
+  source: MediaChangeSource;
   goNext: () => void;
   goPrev: () => void;
   goTo: (index: number) => void;
@@ -33,6 +35,7 @@ export default function MediaGallery({
   index,
   previousIndex,
   direction,
+  source,
   goNext,
   goPrev,
   goTo,
@@ -92,6 +95,9 @@ export default function MediaGallery({
     >
       <div
         className="media-stage"
+        // Picks the crossfade speed in CSS — a swap the visitor asked for is
+        // quick, one the autoplay timer made can take its time.
+        data-fade={source}
         onClick={interactive ? handleStageClick : undefined}
         onTouchStart={interactive ? handleTouchStart : undefined}
         onTouchEnd={interactive ? handleTouchEnd : undefined}
