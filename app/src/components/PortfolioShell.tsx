@@ -147,6 +147,39 @@ export default function PortfolioShell({ projects }: PortfolioShellProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [viewMode, activeProject]);
 
+  // Each overview card is a miniature of the page, so its shape has to track
+  // the window's — a card locked to one ratio shows a different crop than the
+  // page does, and the zoom has to jump between the two the moment it starts.
+  // CSS can't divide one length by another, so the ratio comes from here as a
+  // unitless custom property (see .overview-frame--overview).
+  //
+  // Written synchronously rather than inside requestAnimationFrame: a
+  // background tab gets no frames, so the rAF version left the property unset
+  // until the tab was looked at, and the cards fell back to a fixed ratio.
+  // It's one property write against a resize that is already relaying out.
+  useEffect(() => {
+    const root = document.documentElement;
+
+    function sync() {
+      root.style.setProperty(
+        "--viewport-aspect",
+        String(window.innerWidth / window.innerHeight)
+      );
+    }
+
+    sync();
+    // Both, deliberately. The resize event is the one that fires while a
+    // window is dragged; the observer covers the viewport changing without
+    // one, which is how a card ends up holding a stale shape.
+    window.addEventListener("resize", sync);
+    const observer = new ResizeObserver(sync);
+    observer.observe(root);
+    return () => {
+      window.removeEventListener("resize", sync);
+      observer.disconnect();
+    };
+  }, []);
+
   // ---- overview mode: FLIP zoom -------------------------------------------
 
   function rectOf(el: HTMLElement | null): Rect | null {

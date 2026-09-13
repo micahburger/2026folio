@@ -256,7 +256,10 @@ button {
   position: relative;
   inset: auto;
   width: 100%;
-  aspect-ratio: 1440 / 900;
+  /* The window's own ratio, written by PortfolioShell on every resize, so the
+     card is a true miniature of the page and the zoom has nothing to correct
+     when it starts. The fallback only covers the first paint. */
+  aspect-ratio: var(--viewport-aspect, 1.6);
   overflow: hidden;
   /* Full size containment (not just inline-size) so cqh below has something
      to resolve against — needed for the cover-style scale on the child. */
@@ -305,13 +308,19 @@ button {
   width: 100vw;
   height: 100dvh;
   transform-origin: top left;
-  /* Cover, not fit-by-width: whichever axis needs the bigger scale to fully
-     cover the cell wins, so the real viewport's aspect ratio (which rarely
-     matches the cell's fixed 1440:900) never leaves a gap on the other
-     axis — it crops slightly instead, matching .overview-frame's own
-     overflow:hidden. Width-only scaling left a visible band on whichever
-     side was shorter than the assumed ratio. */
-  transform: scale(max(calc(100cqw / 100vw), calc(100cqh / 100dvh)));
+  /* Width decides the scale, and the card now carries the window's own ratio
+     (see .overview-frame--overview), so height comes out right on its own and
+     the preview is the page shrunk — same line breaks, same crop, nothing for
+     the zoom to reconcile. Cover math used to paper over the mismatch by
+     cropping, which is what made the zoom jump.
+
+     Height is deliberately not part of this: between a resize and the ratio
+     landing, a card can be a hair tall, and the frame's own page color filling
+     a sliver at the bottom is invisible, where re-cropping the content is not.
+
+     flip.ts scales by width to match. Change one and the other has to follow,
+     or the element pops the instant CSS takes back over. */
+  transform: scale(calc(100cqw / 100vw));
   cursor: pointer;
 }
 

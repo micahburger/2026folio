@@ -75,10 +75,10 @@ export function zoomToOverview(
   backgroundColor: string
 ): Animation {
   const cell = cellEl.getBoundingClientRect();
-  // Cover, not fit-by-width — must match .project-view--overview's own
-  // scale(max(...)) in global.css, or the element pops to a different size
-  // the instant the animation ends and CSS takes back over.
-  const scale = Math.max(cell.width / fromRect.width, cell.height / fromRect.height);
+  // Width-only — must match .project-view--overview's own scale() in
+  // global.css, or the element pops to a different size the instant the
+  // animation ends and CSS takes back over.
+  const scale = cell.width / fromRect.width;
   const targetTransform = `translate(${cell.left}px, ${cell.top}px) scale(${scale})`;
 
   element.style.transformOrigin = "top left";
@@ -112,10 +112,10 @@ export function zoomCellToFullscreen(
   cellRect: Rect,
   backgroundColor: string
 ): Animation {
-  // Same cover math as the other two — the element is already viewport-sized
+  // Same width-only scale as the CSS — the element is already viewport-sized
   // and merely scaled down into its cell, so this reproduces exactly where it
   // currently appears, then releases it to its natural full size.
-  const scale = Math.max(cellRect.width / window.innerWidth, cellRect.height / window.innerHeight);
+  const scale = cellRect.width / window.innerWidth;
   const startTransform = `translate(${cellRect.left}px, ${cellRect.top}px) scale(${scale})`;
 
   element.style.transformOrigin = "top left";
