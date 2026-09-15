@@ -583,6 +583,19 @@ button {
     overflow-x: hidden;
   }
 
+  /* The chapter colour has to be pinned to the viewport here, not stretched
+     over the page. Chapters stack in one spot via an absolutely positioned
+     .overview-frame, so the rail holds nothing in flow and .shell collapses to
+     its 100dvh minimum and becomes the scroll container. An inset:0 layer then
+     sizes to that one screen and scrolls away with the content, so every
+     chapter taller than the viewport — which on a phone is all of them — ran
+     out of colour partway down and finished on the shell's white. Fixed keeps
+     it under the full scroll at every position; the colour and its 560ms
+     crossfade are unchanged. */
+  .deck-background {
+    position: fixed;
+  }
+
   /* Pinned to the viewport rather than the top of a scrolling page, so the
      menu stays reachable from anywhere in a chapter. */
   .shell-header {
