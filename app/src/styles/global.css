@@ -20,10 +20,17 @@
   /* Custom cursor — see .custom-cursor. The resting dot is white drawn with
      a difference blend, so it inverts whatever is under it and reads on
      both the light and dark chapters. Over anything clickable it drops the
-     blend and paints the active color as-is. */
+     blend and paints the active color as-is.
+
+     Pressed is the same orange a shade darker (the active one scaled to 86%,
+     which reads as depth rather than as a different colour). The gallery is
+     the only thing that can be grabbed, and with the native cursor hidden
+     there is no grab/grabbing cursor to do this job — so the dot itself has
+     to be what confirms the press landed and the track is in hand. */
   --cursor-size: 16px;
   --cursor-color: #ffffff;
   --cursor-color-active: #ff5a36;
+  --cursor-color-grabbing: #db4d2e;
 
   /* Gallery dots. A dot is too small to answer a hover by growing — 12% of
      8px is invisible — so it brightens instead. Dark chapters override these
@@ -112,7 +119,6 @@ button {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 28px;
   padding: 28px 40px;
   z-index: 20;
   font-family: "Inter", -apple-system, "Helvetica Neue", Arial, sans-serif;
@@ -121,36 +127,51 @@ button {
   line-height: 1.15;
   letter-spacing: -0.01em;
   transition: color 400ms ease;
-}
-
-.shell-name {
-  text-transform: uppercase;
+  /* The bar spans the full width but only the nav cluster inside it is a
+     target. Without this the header's own empty half-width of padding sits
+     over the chapter and quietly eats anything aimed at what's underneath. */
   pointer-events: none;
 }
 
-.shell-tagline {
-  pointer-events: none;
-}
-
-.shell-menu-button {
+/* The one control in the header: name, pill and tagline together. Its box is
+   the cluster, not the bar, so the far corners of the screen aren't secretly
+   clickable — the confusion this fixes was people tapping the words, which
+   are right here, not the empty space beside them. */
+.shell-nav {
   position: relative;
   pointer-events: auto;
-  padding: 10px 22px;
-  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  gap: 28px;
   font: inherit;
-  transition: background-color 400ms ease, color 400ms ease, opacity 200ms ease,
-    scale var(--hover-grow-duration) var(--hover-grow-easing);
+  color: inherit;
+  letter-spacing: inherit;
 }
 
-/* The pill renders ~30px tall. Rather than grow it, an invisible overlay
-   brings the touch target to the 44px minimum — the pill keeps its size. */
-.shell-menu-button::after {
+/* The cluster renders ~30px tall. Rather than grow it, an invisible overlay
+   brings the touch target to the 44px minimum — the nav keeps its size. */
+.shell-nav::after {
   content: "";
   position: absolute;
   inset: -7px -4px;
 }
 
-.shell-menu-button:hover {
+.shell-name {
+  text-transform: uppercase;
+}
+
+.shell-menu-pill {
+  padding: 10px 22px;
+  border-radius: 999px;
+  transition: background-color 400ms ease, color 400ms ease, opacity 200ms ease,
+    scale var(--hover-grow-duration) var(--hover-grow-easing);
+}
+
+/* Hovering anywhere on the cluster answers on the pill. The pill is still
+   what reads as the button, so it stays the thing that responds — but it
+   responds to the whole nav, which is what says the name and the tagline are
+   part of the same control. */
+.shell-nav:hover .shell-menu-pill {
   opacity: 0.85;
 }
 
@@ -170,7 +191,7 @@ button {
    card. The zoom measures the card as grown, so dropping the scale under it
    doesn't show. */
 @media (hover: hover) and (prefers-reduced-motion: no-preference) {
-  .shell-menu-button:hover {
+  .shell-nav:hover .shell-menu-pill {
     scale: var(--hover-grow-scale-button);
   }
 
@@ -211,6 +232,14 @@ button {
 
 .custom-cursor.is-active {
   background: var(--cursor-color-active);
+  mix-blend-mode: normal;
+}
+
+/* Must stay after .is-active — same specificity, so source order is the only
+   thing that lets the pressed colour win over the hover one, and the dot is
+   always both at once. */
+.custom-cursor.is-grabbing {
+  background: var(--cursor-color-grabbing);
   mix-blend-mode: normal;
 }
 
@@ -733,16 +762,15 @@ button {
 
 @media (max-width: 600px) {
   .shell-header {
-    gap: 12px;
     padding: 20px 20px;
   }
 
-  .shell-name,
-  .shell-tagline {
+  .shell-nav {
+    gap: 12px;
     font-size: 11px;
   }
 
-  .shell-menu-button {
+  .shell-menu-pill {
     padding: 8px 16px;
     font-size: 12px;
   }
@@ -934,61 +962,97 @@ button {
 }
 
 .media-stage {
-  /* Crossfade speed, set per swap by MediaGallery's data-fade (kept in sync
-     with motion.ts MEDIA_FADE_*). An autoplay drift is the pace of the page;
-     a swap the visitor asked for is a response to their click and snaps. The
-     variable is read once when each layer's animation starts, not per frame. */
-  --media-fade-ms: 800ms;
+  /* The window the track slides behind. Every example is the same box, so
+     one slide width is one stage width and the whole loop can be expressed
+     in percentages — nothing here has to be measured in JS.
+
+     Width is explicit rather than shrink-to-fit: the gallery is a centred
+     column, so a content-sized stage would hug the frame, and the track's
+     100% steps would then be steps of the frame's width rather than of the
+     window it moves behind. Same number here, since the frame fills the box,
+     but only because the stage is told to fill its column first. */
   position: relative;
-  cursor: pointer;
-  display: grid;
+  width: 100%;
+  overflow: hidden;
+  /* Vertical pans still belong to the page — on mobile the chapter scrolls,
+     and without this the browser hands us every gesture and the page refuses
+     to scroll from anywhere over the media. Horizontal ones come to us,
+     which is what makes the drag possible without preventDefault. */
+  touch-action: pan-y;
+  /* A drag across a photo otherwise starts a native image drag or paints a
+     text selection across the chapter, both of which abandon the gesture. */
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Grab affordance — the only thing on screen that says the examples can be
+   taken hold of, since the dots read as "there are three of these" rather
+   than "drag me". Desktop only: on touch, a cursor is nobody's. */
+.media-stage[data-grabbable] {
+  cursor: grab;
+}
+
+.media-stage[data-grabbable][data-phase="dragging"] {
+  cursor: grabbing;
+}
+
+.media-track {
+  /* Duration and curve kept in sync with motion.ts MEDIA_SLIDE_* — CSS can't
+     read the constants, so motion.ts is the source of truth and these are
+     hand-kept to match. */
+  --media-slide-ms: 700ms;
+  --media-slide-easing: cubic-bezier(0.65, 0, 0.35, 1);
   /* An auto track sizes to the example's own inline pixel width, which is
      what let an oversized example push out of a narrower column no matter
      what max-width said. minmax(0, …) lets the track shrink instead, so the
      frame's own max-width can finally resolve against a real width. */
+  display: grid;
   grid-template-columns: minmax(0, 1fr);
-  max-width: 100%;
+  /* The transform itself is inline (MediaGallery) — it carries the whole
+     gesture: px while the track is in hand, a whole-width step while it
+     settles, zero at rest. */
+  will-change: transform;
+  /* Only the settle animates. In hand the track has to follow the finger
+     exactly — a transition there is the lag people call "sticky" — and at
+     rest the return to zero has to be instantaneous, because that reset is
+     what lands the loop without showing a jump (see the hook's commit). */
+  transition: none;
 }
 
-.media-stage[data-fade="manual"] {
-  --media-fade-ms: 250ms;
+.media-stage[data-phase="settling"] .media-track {
+  transition: transform var(--media-slide-ms) var(--media-slide-easing);
 }
 
-/* Both layers occupy the same grid cell, so they sit exactly on top of one
-   another and the stage never changes size between examples — every example
-   is the same box now. Nothing moves; one simply fades up as the other fades
-   down, in place. */
-.media-layer {
+/* A released swipe leaves at the speed it was thrown and settles, so it gets
+   a pure ease-out and the shorter of the two durations; an autoplay drift
+   keeps the slower in-out above. */
+.media-stage[data-source="manual"] .media-track {
+  --media-slide-ms: 400ms;
+  --media-slide-easing: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/* Every slide occupies the same grid cell, then steps itself out to where it
+   belongs in whole stage widths (--media-slide-offset, set per slide by
+   MediaGallery). Stacking them rather than laying them out in a row is what
+   keeps the stage exactly one example tall and one example wide: the grid
+   sizes to one box, not to a row of three.
+
+   These never transition. Only the track moves; the slides hold still and
+   re-address themselves the instant the loop wraps — which is how a slide
+   crosses from one edge to the other without anything showing. */
+.media-slide {
   grid-area: 1 / 1;
   display: flex;
   align-items: center;
   justify-content: center;
   min-width: 0;
-  animation: media-fade var(--media-fade-ms, 800ms) ease forwards;
+  transform: translateX(calc(var(--media-slide-offset, 0) * 100%));
 }
 
-.media-layer--exit {
-  animation-direction: reverse;
-  pointer-events: none;
-}
-
-/* Opacity only — one plain crossfade everywhere, no drift or scale.
-   The 55% stop is what keeps the two layers overlapping rather than dipping:
-   two stacked layers both sitting at half opacity let a quarter of the page
-   bleed through between them, which reads as a dim blink mid-swap. The
-   incoming layer reaches full a little past halfway, and since the exit
-   plays these same frames in reverse, the outgoing one mirrors it and holds
-   opaque until a little before that — so their overlap never thins. */
-@keyframes media-fade {
-  from {
-    opacity: 0;
-  }
-  55% {
-    opacity: 1;
-  }
-  to {
-    opacity: 1;
-  }
+/* Nothing in a slide is separately draggable — a native image drag steals
+   the gesture from the first pixel and leaves the track stranded. */
+.media-slide img {
+  -webkit-user-drag: none;
 }
 
 .media-frame {
@@ -1120,12 +1184,14 @@ button.media-progress-mark:hover:not(.is-active) {
   .deck-background {
     transition-duration: 120ms !important;
   }
-  /* Setting the variable rather than animation-duration keeps this in one
-     place, and matches motion.ts MEDIA_FADE_REDUCED_MS — which is what the
-     JS uses to decide how long to hold the outgoing layer. */
-  .media-stage,
-  .media-stage[data-fade="manual"] {
-    --media-fade-ms: 120ms;
+  /* Setting the variable rather than transition-duration keeps this in one
+     place, and matches motion.ts MEDIA_SLIDE_REDUCED_MS — which is what the
+     JS uses to decide when the track has landed. The drag itself is left
+     alone: it isn't motion the page plays at anyone, it's the visitor's own
+     hand, and there is nothing there to reduce. */
+  .media-track,
+  .media-stage[data-source="manual"] .media-track {
+    --media-slide-ms: 120ms;
   }
   .project-view.is-leaving .media-gallery,
   .project-view.is-leaving .project-copy,

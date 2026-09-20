@@ -9,11 +9,14 @@ import { MEDIA_BOX, type LayoutProps } from "./types";
  * inset from the viewport edges so the white page shows around it. Color
  * shifts per active example (olive / orange), matching the source design.
  * Copy is one stacked column (title, body) so it holds its position
- * while only the media column swaps between examples on an autoplay fade,
+ * while only the media column swaps between examples as the gallery slides,
  * with the gallery's own progress dots under the media.
  */
 export default function PanelLayout({ project, gallery, interactive }: LayoutProps) {
-  const current = project.media[gallery.index];
+  // activeIndex, not index: it turns over the moment a slide starts
+  // travelling, so the panel's colour crossfade runs alongside the swipe
+  // instead of catching up after it has landed.
+  const current = project.media[gallery.activeIndex];
   const backgroundColor = current.backgroundColor ?? project.backgroundColor;
   const textColor = current.textColor ?? project.textColor;
 

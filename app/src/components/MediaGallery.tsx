@@ -1,16 +1,29 @@
-import { useRef, type CSSProperties } from "react";
+import type { CSSProperties } from "react";
 import type { ProjectMediaItem } from "../data/types";
-import type { MediaChangeSource } from "../hooks/useMediaGallery";
+import type { MediaChangeSource, MediaPhase } from "../hooks/useMediaGallery";
 import MediaFrame from "./MediaFrame";
 
 export interface MediaGalleryState {
+  /** The slide the track's geometry is built around — still the outgoing one
+   * while a settle is in flight. Positions come from this. */
   index: number;
-  previousIndex: number | null;
-  direction: 1 | -1;
+  /** The slide being shown — the incoming one from the moment a settle
+   * starts. Dots, labels and per-example colour come from this. */
+  activeIndex: number;
+  phase: MediaPhase;
+  /** The track's x offset: px while in hand, a whole-width step otherwise. */
+  offset: string;
   source: MediaChangeSource;
+  trackRef: React.MutableRefObject<HTMLDivElement | null>;
   goNext: () => void;
   goPrev: () => void;
   goTo: (index: number) => void;
+  dragHandlers: {
+    onPointerDown: (event: React.PointerEvent<HTMLDivElement>) => void;
+    onPointerMove: (event: React.PointerEvent<HTMLDivElement>) => void;
+    onPointerUp: (event: React.PointerEvent<HTMLDivElement>) => void;
+    onPointerCancel: (event: React.PointerEvent<HTMLDivElement>) => void;
+  };
 }
 
 interface MediaGalleryProps extends MediaGalleryState {
@@ -28,24 +41,38 @@ interface MediaGalleryProps extends MediaGalleryState {
   frameSize?: { width: number; height?: number };
 }
 
-const SWIPE_THRESHOLD_PX = 40;
+/**
+ * Where slide `i` sits relative to the one on screen, in whole stage widths,
+ * taking whichever way round the loop is shorter. With three examples that's
+ * always one of -1 (waiting off the left edge), 0 (on screen) or 1 (waiting
+ * off the right), so the loop has no seam in either direction: there is
+ * always a slide parked just outside both edges to drag into view.
+ */
+function relativeOffset(i: number, index: number, count: number) {
+  let rel = i - index;
+  if (rel * 2 > count) rel -= count;
+  if (rel * 2 < -count) rel += count;
+  return rel;
+}
 
 export default function MediaGallery({
   media,
   index,
-  previousIndex,
-  direction,
+  activeIndex,
+  phase,
+  offset,
   source,
+  trackRef,
   goNext,
   goPrev,
   goTo,
+  dragHandlers,
   className = "",
   style,
   interactive = true,
   frameSize,
 }: MediaGalleryProps) {
-  const touchStartX = useRef<number | null>(null);
-  const current = media[index];
+  const current = media[activeIndex];
 
   function handleKeyDown(event: React.KeyboardEvent) {
     if (event.key === "ArrowRight") {
@@ -59,29 +86,12 @@ export default function MediaGallery({
     }
   }
 
-  function handleStageClick(event: React.MouseEvent<HTMLDivElement>) {
-    const rect = event.currentTarget.getBoundingClientRect();
-    const clickedRight = event.clientX - rect.left > rect.width / 2;
-    if (clickedRight) goNext();
-    else goPrev();
-  }
-
-  function handleTouchStart(event: React.TouchEvent) {
-    // Swiping the media changes the example, not the project — stop it
-    // here so the deck-level swipe listener never also sees this gesture.
-    event.stopPropagation();
-    touchStartX.current = event.touches[0].clientX;
-  }
-
-  function handleTouchEnd(event: React.TouchEvent) {
-    event.stopPropagation();
-    if (touchStartX.current === null) return;
-    const deltaX = event.changedTouches[0].clientX - touchStartX.current;
-    touchStartX.current = null;
-    if (Math.abs(deltaX) < SWIPE_THRESHOLD_PX) return;
-    if (deltaX < 0) goNext();
-    else goPrev();
-  }
+  // The deck listens for swipes on the window to step between projects. A
+  // swipe that started on the media is about the examples, not the chapter,
+  // so it's stopped here before it can reach that listener. Pointer events
+  // drive the drag itself, but they don't suppress the touch events the deck
+  // is watching — those are a separate stream and have to be caught too.
+  const swallowTouch = (event: React.TouchEvent) => event.stopPropagation();
 
   return (
     <div
@@ -89,31 +99,45 @@ export default function MediaGallery({
       style={style}
       tabIndex={interactive ? 0 : undefined}
       role="group"
-      aria-roledescription="media gallery"
-      aria-label={`UI example ${index + 1} of ${media.length}: ${current.label}`}
+      aria-roledescription="carousel"
+      aria-label={`UI example ${activeIndex + 1} of ${media.length}: ${current.label}`}
       onKeyDown={interactive ? handleKeyDown : undefined}
     >
       <div
         className="media-stage"
-        // Picks the crossfade speed in CSS — a swap the visitor asked for is
-        // quick, one the autoplay timer made can take its time.
-        data-fade={source}
-        onClick={interactive ? handleStageClick : undefined}
-        onTouchStart={interactive ? handleTouchStart : undefined}
-        onTouchEnd={interactive ? handleTouchEnd : undefined}
+        data-phase={phase}
+        // Picks the slide's speed and curve in CSS — a swap the visitor asked
+        // for is a response to their hand, one the autoplay timer made can
+        // drift. Only read while the track is settling.
+        data-source={source}
+        data-grabbable={interactive ? "" : undefined}
+        {...(interactive
+          ? {
+              ...dragHandlers,
+              onTouchStart: swallowTouch,
+              onTouchMove: swallowTouch,
+              onTouchEnd: swallowTouch,
+            }
+          : {})}
       >
-        {previousIndex !== null && (
-          <div
-            key={`exit-${previousIndex}`}
-            className="media-layer media-layer--exit"
-            data-direction={direction}
-            aria-hidden="true"
-          >
-            <MediaFrame item={media[previousIndex]} frameSize={frameSize} />
-          </div>
-        )}
-        <div key={`enter-${index}`} className="media-layer media-layer--enter" data-direction={direction}>
-          <MediaFrame item={current} frameSize={frameSize} />
+        <div
+          ref={trackRef}
+          className="media-track"
+          style={{ transform: `translate3d(${offset}, 0, 0)` }}
+        >
+          {media.map((item, i) => (
+            <div
+              key={item.id}
+              className="media-slide"
+              // Whole stage widths, so the slide's own box stays the unit —
+              // this survives the box being scaled down on a narrow window
+              // without any of it having to be measured.
+              style={{ "--media-slide-offset": relativeOffset(i, index, media.length) } as CSSProperties}
+              aria-hidden={i === activeIndex ? undefined : "true"}
+            >
+              <MediaFrame item={item} frameSize={frameSize} />
+            </div>
+          ))}
         </div>
       </div>
 
@@ -123,9 +147,9 @@ export default function MediaGallery({
             <button
               key={item.id}
               role="tab"
-              aria-selected={i === index}
+              aria-selected={i === activeIndex}
               aria-label={`Show UI example ${i + 1}: ${item.label}`}
-              className={`media-progress-mark ${i === index ? "is-active" : ""}`}
+              className={`media-progress-mark ${i === activeIndex ? "is-active" : ""}`}
               onClick={(event) => {
                 event.stopPropagation();
                 goTo(i);
@@ -134,7 +158,7 @@ export default function MediaGallery({
           ) : (
             <span
               key={item.id}
-              className={`media-progress-mark ${i === index ? "is-active" : ""}`}
+              className={`media-progress-mark ${i === activeIndex ? "is-active" : ""}`}
             />
           )
         )}

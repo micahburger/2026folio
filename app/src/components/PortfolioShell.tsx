@@ -436,16 +436,35 @@ export default function PortfolioShell({ projects }: PortfolioShellProps) {
           } as CSSProperties
         }
       >
-        <span className="shell-name">Micah Lindenberger</span>
+        {/* The whole cluster is the control, not just the pill. Visitors read
+            the three items as one nav and tapped the name or the tagline
+            expecting the menu; those did nothing, which reads as a dead
+            header rather than as a pill they missed. The pill is a span now
+            so this can be the button — a button inside a button is invalid
+            and the inner one swallows the click anyway. */}
         <button
           type="button"
-          className="shell-menu-button"
-          style={{ background: headerColor, color: viewMode === "overview" ? "#000000" : pageColorFor(projects[activeProject]) }}
+          className="shell-nav"
+          // No aria-label: it would replace the contents as the accessible
+          // name and take the name and the tagline out of the page entirely.
+          // The concatenation reads fine — "Micah Lindenberger Menu 2026 Mini
+          // portfolio, button, collapsed" — and the pill's own word is the
+          // verb, so nothing has to be added to explain what it does.
+          aria-expanded={viewMode === "overview"}
           onClick={() => (viewMode === "overview" ? closeOverview(activeProject) : openOverview())}
         >
-          {viewMode === "overview" ? "Close" : "Menu"}
+          <span className="shell-name">Micah Lindenberger</span>
+          <span
+            className="shell-menu-pill"
+            style={{
+              background: headerColor,
+              color: viewMode === "overview" ? "#000000" : pageColorFor(projects[activeProject]),
+            }}
+          >
+            {viewMode === "overview" ? "Close" : "Menu"}
+          </span>
+          <span className="shell-tagline">2026 Mini portfolio</span>
         </button>
-        <span className="shell-tagline">2026 Mini portfolio</span>
       </header>
 
       {viewMode === "project" && (
