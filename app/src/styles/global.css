@@ -974,6 +974,14 @@ button {
   position: relative;
   width: 100%;
   overflow: hidden;
+  /* A column of one, purely so the track is handed the stage's real height.
+     The stage's own height isn't a length — it's whatever the flex shrink in
+     .chapter-media leaves it — so `height: 100%` on the track had nothing
+     definite to resolve against and silently fell back to the example's full
+     height, which is what the clip then bit into. Distributing the height as
+     a flex line sidesteps percentages entirely. */
+  display: flex;
+  flex-direction: column;
   /* Vertical pans still belong to the page — on mobile the chapter scrolls,
      and without this the browser hands us every gesture and the page refuses
      to scroll from anywhere over the media. Horizontal ones come to us,
@@ -1008,6 +1016,19 @@ button {
      frame's own max-width can finally resolve against a real width. */
   display: grid;
   grid-template-columns: minmax(0, 1fr);
+  /* The row gets the same treatment as the column, and for the same reason
+     in the other axis. Clipping the stage (above) is what lets it flex-shrink
+     at all — `min-height: auto` only holds a flex item at its content size
+     while its overflow is visible — so on a window too short for the full
+     786x762 box the stage now ends up shorter than the example inside it.
+     Without a row that can shrink to match, the example keeps its full height
+     and the clip takes a bite out of its bottom edge. minmax(0, 1fr) against
+     an explicit 100% height hands the slide the stage's real height instead,
+     and the example scales down into it (see .media-frame's max-height). */
+  grid-template-rows: minmax(0, 1fr);
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
   /* The transform itself is inline (MediaGallery) — it carries the whole
      gesture: px while the track is in hand, a whole-width step while it
      settles, zero at rest. */
@@ -1045,7 +1066,11 @@ button {
   display: flex;
   align-items: center;
   justify-content: center;
+  /* Both axes, and both for the same reason: a grid item's automatic minimum
+     size is its content, so without these it refuses to shrink inside the
+     track's minmax(0, 1fr) and the row above achieves nothing. */
   min-width: 0;
+  min-height: 0;
   transform: translateX(calc(var(--media-slide-offset, 0) * 100%));
 }
 
@@ -1066,9 +1091,14 @@ button {
   letter-spacing: 0.04em;
   text-align: center;
   padding: 16px;
-  /* Scale down (never up) once the column is narrower than the item's own
-     width, keeping its aspect ratio via the inline width/aspect-ratio. */
+  /* Scale down (never up) once the column is narrower — or the window
+     shorter — than the item's own box, keeping its aspect ratio via the
+     inline width/aspect-ratio. max-height is what stops a short window from
+     cropping: the box is clamped to the room there is, and the export inside
+     it scales to fit on `object-fit: contain` rather than losing its bottom
+     edge behind the dots. */
   max-width: 100%;
+  max-height: 100%;
 }
 
 .media-frame img {
